@@ -4,3 +4,11 @@ db
 dbd
 include
 lib
+.idea
+*.py[co]
+~*
+*~
+O.*
+doxygen
+tags
+iocs

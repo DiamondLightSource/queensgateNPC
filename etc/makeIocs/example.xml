@@ -1,3 +1,4 @@
 <?xml version="1.0" ?>
-<components arch="linux-x86">
+<components arch="linux-x86_64">
+	<queensgateNPC.QueensgateNPC P="MO-PIEZO-01" Q="X" name="piezo1" port="/dev/tty0"/>
 </components>

@@ -1,11 +1,12 @@
 /**
 \mainpage queensgateNPC EPICS Support Module
 \section intro_sec Introduction
-I'm going to describe the module here, possibly with a <a href="http://www.google.co.uk">web link to the manufacturers webpage</a>. \n
+EPICS support for Queensgate NPC-D-5xxx and 6xxx series controllers using <a href="https://www.prior.com/product/pc-d-6000-multi-channel-closed-loop-controller">Prior's SDK</a>. \n
 You can also link to \ref thing.vdb "internally generated documentation" with alternate text, or by just by mentioning its name, e.g. thing.vdb
 
 \section bugs_sec Known Bugs
-- I'm going to describe any known bugs here
+- Only tested on NPC-D-6330
+- Only working for Prior's SDK 2.1.187
 
 \section user_sec User Manual
 This section contains instructions for the end user

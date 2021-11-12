@@ -14,6 +14,9 @@ include $(TOP)/configure/CONFIG
 #DB += motor.template
 #DB += basic_motor.template
 
+DB += NPCcontroller.template
+DB += NPCaxis.template
+
 #----------------------------------------------------
 # In a Diamond IOC Application, build db files from
 # template files like this

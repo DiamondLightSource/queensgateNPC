@@ -22,12 +22,18 @@
 # Build variables that are NOT used in paths should be set in
 # the CONFIG_SITE file.
 
+TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
+
 # Variables and paths to dependent modules:
 #MODULES = /path/to/modules
 #MYMODULE = $(MODULES)/my-module
 
-# If using the sequencer, point SNCSEQ at its top directory:
-#SNCSEQ = $(MODULES)/seq-ver
+SUPPORT=      /dls_sw/prod/R3.14.12.7/support
+WORK=         /dls_sw/work/R3.14.12.7/support
+
+ASYN=$(SUPPORT)/asyn/4-41
+MOTOR=$(SUPPORT)/motor/7-0dls7
+#ASYNAID=    $(SUPPORT)/asynaid/2-10
 
 # EPICS_BASE should appear last so earlier modules can override stuff:
 EPICS_BASE = /dls_sw/epics/R3.14.12.7/base

@@ -1,0 +1,109 @@
+# NPC series Queensgate controller template
+# Note that Axis 0 is the controller itself.
+
+# % macro, name, Controller GUI name
+# % macro, P, PV prefix for Queensgate controller
+# % macro, Q, PV suffix
+# % macro, PORT, port to use -- as in /dev/tty or /dev/usb
+# % macro, TIMEOUT, Asyn timeout
+
+# This associates the template with an edm screen
+# % gui, $(name=), edm, npc6xxxControllerStatus.edl, device=$(P)$(Q)
+
+record(stringin, "$(P)$(Q):STATUS")
+{
+    field(DESC, "Controller status")
+    field(SCAN, "I/O Intr")
+    # field(SCAN, "1 second")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_STATUS")
+    field(PINI, "1")
+}
+
+record(bi, "$(P)$(Q):CONNECTED")
+{
+    field(DESC, "Controller connection")
+    field(SCAN, "I/O Intr")
+    # field(SCAN, "1 second")
+    field(DTYP, "asynInt32")
+    field(VAL,  "0")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_CONNECTED")
+    field(ZNAM, "Disconnected")
+    field(ONAM, "Connected")
+}
+
+record(stringin, "$(P)$(Q):MODEL")
+{
+    field(DESC, "Controller model")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_MODEL")
+    field(PINI, "1")
+}
+
+record(stringin, "$(P)$(Q):FIRMWARE")
+{
+    field(DESC, "Controller FW version")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_FIRMWARE")
+    field(PINI, "1")
+}
+
+record(stringin, "$(P)$(Q):SERIALNUM")
+{
+    field(DESC, "Controller serial num")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_SERIALNO")
+    field(PINI, "1")
+}
+
+record(longin, "$(P)$(Q):MAXSTAGES")
+{
+    field(DESC, "max supported stages")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_MAXSTAGES")
+    field(PINI, "YES")
+}
+
+record(longin, "$(P)$(Q):MAXAXES")
+{
+    field(DESC, "max configured stages")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_MAXAXES")
+    field(PINI, "YES")
+}
+
+record(stringin, "$(P)$(Q):DLLVERSION")
+{
+    field(DESC, "SDK library version")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_DLLVER")
+    field(PINI, "1")
+}
+
+record(stringin, "$(P)$(Q):SECURITY")
+{
+    field(DESC, "Security level")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_SECURITY")
+    field(PINI, "1")
+}
+
+#Deferred moves. Enables storage of 1 move of each axis when set, and
+#               execute all movements at once by unsetting it back
+record(bo, "$(P)$(Q):DEFER") {
+    field(DESC, "Deferred move control")
+    field(SCAN, "Passive")
+    field(DTYP, "asynInt32")
+    # field(DTYP, "asynUInt32Digital")
+    field(OUT, "@asynMask($(PORT),0,$(TIMEOUT))MOTOR_DEFER_MOVES")
+    field(ZNAM, "normal")
+    field(ONAM, "defer")
+    field(VAL, "0")
+}

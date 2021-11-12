@@ -1,0 +1,84 @@
+# NPC series Queensgate axis template
+
+# % macro, name, Axis (Stage) name
+# % macro, P, PV prefix for Queensgate axis
+# % macro, Q, PV suffix
+# % macro, AXIS, controller axis index [0..n-1]
+# % macro, PORT, Asyn PORT name
+# % macro, TIMEOUT, Asyn time out
+# % macro, dir, motor direction
+# % macro, mres, motion resolution (applies same to ERES and RRES)
+# % macro, dhlm, dial high limit
+# % macro, dllm, dial low limit
+# % macro, prec, display precision
+# % macro, egu, engineering units
+
+# This associates the template with an edm screen
+#  gui, $(name), edm, queensgateNPC.edl, P=$(P), Q=$(Q)
+# % gui, $(name), edm, motor.edl, motor=$(P)$(Q)
+# % gui, $(name), edmembed, motor-embed-small.edl, motor=$(P)$(Q),filename=motor.edl,box-label=$(name)
+
+#Generated basic motor records for ASYN device
+substitute "VELO=1, VBAS=1, ACCL=1, BDST=0, BVEL=0, BACC=0.1"
+substitute "M=$(Q), DESC=$(name), DTYP=asynMotor, ADDR=$(AXIS)"
+substitute "DIR=$(dir=Pos), MRES=$(mres=0.000001)"
+substitute "PREC=$(prec=6), EGU=$(egu=um), DHLM=$(dhlm=10), DLLM=$(dllm=-10)"
+substitute "INIT="
+include "basic_asyn_motor.db"
+#include "basic_asyn_motor.template"
+
+
+# TODO: to be removed??
+record(bi, "$(P)$(Q):INPOSIT")
+{
+    #stage in position, after a Low-Pass-Filter check
+    field(DESC, "in position LPFconfirm")
+    field(SCAN, "I/O Intr")
+    #field(SCAN, ".5 second")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSLPF")
+    field(PINI, "1")
+    #XXX:
+    field(ZNAM, "out position")
+    field(ONAM, "Confirmed")
+}
+
+record(stringin, "$(P)$(Q):AXISNAME")
+{
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_NAMEAXIS")
+    # field(PINI, "1")
+}
+
+record(stringin, "$(P)$(Q):STAGEMODEL")
+{
+    field(DESC, "stage model reported")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_STAGEMODEL")
+    # field(PINI, "1")
+}
+
+#XXX: to be removed
+record(bi, "$(P)$(Q):CONNECTED")
+{
+    field(DESC, "Axis connection status")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynInt32")
+    field(VAL,  "0")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_AXISCONN")
+    field(ZNAM, "Disconnected")
+    field(ONAM, "Connected")
+}
+
+record(bi, "$(P)$(Q):MODE")
+{
+    field(DESC, "Digital control mode")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynInt32")
+    field(VAL,  "0")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_AXISMODE")
+    field(ZNAM, "Analogue")
+    field(ONAM, "Digital")
+}

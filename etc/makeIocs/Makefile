@@ -26,7 +26,7 @@ include $(TOP)/configure/RULES
 # General rule for building a Simulation IOC from an XML file
 ../../makeIocs/O.Common/%_sim: ../%.xml
 	$(RMDIR) ../O.Common/tmp $@
-	$(XMLBUILDER) $(DEBUG) --sim=linux-x86 -e -o ../O.Common/tmp $<
+	$(XMLBUILDER) $(DEBUG) --sim=linux-x86_64 -e -o ../O.Common/tmp $<
 	$(MV) ../O.Common/tmp/$(*F)_sim $@
 
 # Alternate rule for building a Standard IOC from a python file
@@ -38,7 +38,7 @@ include $(TOP)/configure/RULES
 # Alternate rule for building a Simulation IOC from a python file
 ../../makeIocs/O.Common/%_sim: ../%.py
 	$(RMDIR) ../O.Common/tmp $@
-	./$< $(DEBUG) --sim=linux-x86 -e -o ../O.Common/tmp $*
+	./$< $(DEBUG) --sim=linux-x86_64 -e -o ../O.Common/tmp $*
 	$(MV) ../O.Common/tmp/$(*F)_sim $@
 
 # Install ioc from O.Common
