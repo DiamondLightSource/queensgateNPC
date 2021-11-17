@@ -69,22 +69,21 @@ QgateController::QgateController(const char *portName,
             1, /* Autoconnect */
             0, /* Default priority */
             0) /* Default stack size */
-    , nameCtrl(portName)
     , numAxes(maxNumAxes)
     , maxAxes(QgateController::NOAXIS)
+    , nameCtrl(portName)
     , initialised(false)
     , connected(false)
     , deferringMode(false)
 {
-
     // Uncomment these lines to enable asyn trace flow and error
     // pasynTrace->setTraceMask(pasynUserSelf, 0xFF);
     // pasynTrace->setTraceIOMask(pasynUserSelf, 0xFF);
     // pasynTrace->setTraceInfoMask(pasynUserSelf, 0xFF);
     // pasynTrace->setTraceFile(pasynUserSelf, stdout);
     
-    // printf("CreatedParams %s\n", portName);
     //printf("AsynParams lists: %d\n", asynParams.numLists());
+
     createParam(QG_CtrlStatusCmd,       asynParamOctet,     &QG_CtrlStatus);
     createParam(QG_CtrlConnectedCmd,    asynParamInt32,     &QG_CtrlConnected);
     createParam(QG_CtrlModelCmd,        asynParamOctet,     &QG_CtrlModel);
@@ -101,16 +100,18 @@ QgateController::QgateController(const char *portName,
     createParam(QG_AxisPosCmd,          asynParamFloat64,   &QG_AxisPos);
     createParam(QG_AxisInPosLPFCmd,     asynParamInt32,     &QG_AxisInPosLPF);
 
-    //printf("AsynParams lists: %d\n", asynParams.numLists());
+    // Uncomment this line to display list of params at startup
+    // printf("AsynParams lists: %d\n", asynParams.numLists());
 
     //print params
-    this->reportParams(stdout,2); 
+    // this->reportParams(stdout,2); 
+
     /* Initialise Prior's Library controller */
     if(initController(serialPortName, libraryPath) != asynSuccess) {
         printf("Failed to initialise %s controller\n", portName);
     }
     
-//XXX: not needed to connect asyn
+    //XXX: not needed to connect asyn
     // Connect asyn to the serial port interface
     // int retries=3;
     // do {
@@ -118,7 +119,7 @@ QgateController::QgateController(const char *portName,
     //     //         != asynSuccess) {
     //     if(pasynOctetSyncIO->connect(serialPortName, 0,
     //             &serialPortUser, NULL) != asynSuccess) {
-    //         printf("!!!!!!!!!!!!!!!!!!!!!!!!!!NPCcontroller: Failed to connect to serial port %s\n",
+    //         printf("NPCcontroller: Failed to connect to serial port %s\n",
     //                 serialPortName);
     //         epicsThreadSleep(1);
     //     }
@@ -126,9 +127,6 @@ QgateController::QgateController(const char *portName,
     //  // pasynOctetSyncIO->setOutputEos(serialPortUser, "\n", 1);
     // } while (--retries>0);
     // if(retries<1) return;
-
-    //XXX:
-    printf("CreatedParams Finished\n");
 
     setIntegerParam(QG_CtrlMaxAxes, numAxes);
     initialised = true;
@@ -189,8 +187,8 @@ asynStatus QgateController::initController(const char* portDevice, const char* l
         char dll[100];
         snprintf(dll, 100, "%d.%d.%d", dllVersionMajor, dllVersionMinor, dllVersionBuild);
         setStringParam(QG_CtrlDLLver, dll);
+        printf("queensgateNPC: Initialising SDK %s\n", dll);
     }
-    printf("queensgateNPC: Initialising SDK %s\n", versionDLL.c_str());
     return asynSuccess;
 }
 
@@ -219,21 +217,21 @@ asynStatus QgateController::initialChecks() {
     if(result != DLL_ADAPTER_STATUS_SUCCESS) {
         return asynError;   //comms failed (again)
     }
-    printf("queensgateNPC Controller: %s %s - S/N:%s - up to %d channels\n", 
-            model.c_str(), nameCtrl.c_str(), serialNum.c_str(), maxAxes);
-            
     setStringParam(QG_CtrlModel, model.c_str());
     setStringParam(QG_CtrlSerialNum, serialNum.c_str());
     setStringParam(QG_CtrlFirmware, ctrl_firmware.c_str());
     setIntegerParam(QG_CtrlMaxStages, maxAxes);
     setIntegerParam(QG_CtrlMaxAxes, numAxes);
     setStringParam(QG_CtrlSecurity, securityLevel.c_str());
+    
     //List all detected/connected stages, from 1 to maximum detected
     std::ostringstream reportTxt;
+    reportTxt << "queensgateNPC Controller " << model << " " << nameCtrl <<
+                " - S/N:" << serialNum << 
+                " - up to " << maxAxes << " channels." << std::endl;
     for(int i=1; i<=maxAxes; ++i) {
         std::ostringstream stageCmd;
         stageCmd << "identity.stage.part.get " << i;
-        //printf("Cmd='%s'\n", stageCmd.str().c_str());
         result = qg.DoCommand(stageCmd.str(), listresName, listresVal);
         reportTxt << "Stage[" << i << "]:";
         if(result== DLL_ADAPTER_STATUS_SUCCESS) {
@@ -258,12 +256,7 @@ asynStatus QgateController::poll() {
     TakeLock takeLock(this, /*alreadyTaken=*/true);
 	FreeLock freeLock(takeLock);
 
-    //XXX:
-    printf("%s:polling...\n", mytime());
-
     //get controller status
-    // std::ostringstream qgCmd;
-    // qgCmd << "controller.status.get";
     //TODO: check security level change
     std::string reply;
     if(getCmd("controller.status.get", 0, reply, 2) != DLL_ADAPTER_STATUS_SUCCESS) {
@@ -284,11 +277,11 @@ asynStatus QgateController::poll() {
             }
             //XXX:
             printf("QueensgateNPC: controller %s %s connected\n", model.c_str(), nameCtrl.c_str());
+            
             setIntegerParam(QG_CtrlConnected, 1);
             connected = true;
             if(getCmd("controller.status.get", 0, reply, 0) == DLL_ADAPTER_STATUS_SUCCESS) {
                 setStringParam(QG_CtrlSecurity, reply.c_str());
-            //TODO: tell all the axes to check and update if they are connected
             }
         }
     }
@@ -377,9 +370,6 @@ DllAdapterStatus QgateController::moveCmd(std::string cmd, int axisNum, double v
     //asynPrint(pasynUser, ASYN_TRACEIO_DRIVER, "Function %s=%d\n", functionName, function);
    
     std::ostringstream stageCmd;
-    //XXX:
-    // stageCmd << cmd << " " << axisNum << " " << std::fixed << nativeValue;
-    
     stageCmd << cmd << " " << axisNum << " " << std::fixed << value;
 
     if (deferringMode) {
@@ -391,22 +381,28 @@ DllAdapterStatus QgateController::moveCmd(std::string cmd, int axisNum, double v
         return DLL_ADAPTER_STATUS_SUCCESS;
     }
 
-    //XXX:
-    printf("Stage %d moving CMD:'%s'\n", axisNum, stageCmd.str().c_str());
-    
-    result = qg.DoCommand(stageCmd.str().c_str(), listresName, listresVal);
-    //XXX:
-    printQGList(listresName);
-    printQGList(listresVal);
-    
-    //XXX:
-    double resultMicrons = PM_TO_MICRONS(atof(listresVal.begin()->c_str()));
-    double newValue = atof(listresVal.begin()->c_str());
-    // printf("Stage %s (%d) requested to move req=%lf pos=%lf microns\n", 
-    //             (result==DLL_ADAPTER_STATUS_SUCCESS)?"":"NOT", result, nativeValue, resultMicrons);
-    printf("Stage %s (%d) requested to move req=%lf, moved=%lf (%lf microns)\n", 
-                (result==DLL_ADAPTER_STATUS_SUCCESS)?"":"NOT", result, value, newValue, resultMicrons);
-
+    //XXX: remove multiple tries code
+    // unsigned int numtries = 2;
+    // do {
+        //XXX:
+        printf("Stage %d moving CMD:'%s'\n", axisNum, stageCmd.str().c_str());
+        
+        result = qg.DoCommand(stageCmd.str().c_str(), listresName, listresVal);
+        //XXX:
+        printQGList(listresName);
+        printQGList(listresVal);
+        
+        //XXX:
+        double resultMicrons = PM_TO_MICRONS(atof(listresVal.begin()->c_str()));
+        double newValue = atof(listresVal.begin()->c_str());
+        // printf("Stage %s (%d) requested to move req=%lf pos=%lf microns\n", 
+        //             (result==DLL_ADAPTER_STATUS_SUCCESS)?"":"NOT", result, nativeValue, resultMicrons);
+        printf("Stage %s (%d) requested to move req=%lf, moved=%lf (%lf microns)\n", 
+                    (result==DLL_ADAPTER_STATUS_SUCCESS)?"":"NOT", result, value, newValue, resultMicrons);
+    //     if (result!=DLL_ADAPTER_STATUS_SUCCESS) {
+    //         epicsThreadSleep(0.5);
+    //     }
+    // } while( (result!=DLL_ADAPTER_STATUS_SUCCESS) && (numtries-- > 0) );
     return result;
 }
 
@@ -421,12 +417,9 @@ DllAdapterStatus QgateController::getCmd(std::string cmd, int axisNum, std::stri
     // printf("Function %s\n", functionName);
    
     std::ostringstream stageCmd;
-    //Do not append axisNum if invalid (for controller commands)
     stageCmd << cmd;
     if(axisNum > 0) {
         //Axis 0 is the controller itself and does not need this parameter
-        //FIXME: more axes
-        //stageCmd << " 1";
         stageCmd << " " << axisNum;
     }
     //XXX:
@@ -447,22 +440,6 @@ DllAdapterStatus QgateController::getCmd(std::string cmd, int axisNum, std::stri
 
 DllAdapter& QgateController::getAdapter() {
     return qg;
-}
-
-void QgateController::addAxis(const int axisNum) {
-    //TODO: add to axis list?
-    //std::map m;
-    if( (maxAxes != QgateController::NOAXIS) && 
-            ( (axisNum >= maxAxes) || (numAxes >= maxAxes )) ) {
-        printf("QueensgateNPC: unable to add axis %d to controller %s (%d of %d)\n", 
-                axisNum, nameCtrl.c_str(), numAxes, maxAxes);
-        return;
-    }
-    // m.add(axisNum);
-
-    numAxes++;
-    this->getAxis(axisNum);
-    
 }
 
 bool QgateController::isAxisPresent(int axisNum) {

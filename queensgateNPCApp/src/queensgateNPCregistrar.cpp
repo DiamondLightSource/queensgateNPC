@@ -30,12 +30,14 @@ asynStatus qgateControllerConfig(const char* ctrlName,
     //      t = qg.OpenSession("/tmp/vmodem0")
       
     printf("New controller(%s, maxNumAxes=%d, lowPort=%s)...\n",ctrlName, maxNumAxes, lowlevelPortAddress);
-    QgateController* pd = new QgateController(ctrlName, lowlevelPortAddress, maxNumAxes, 
-                                            movingPollPeriod, idlePollPeriod, libPath);
 
     //XXX: remove pd, or leave for asynPrint?
-    printf("queensgateNPC: Created %p\n", pd);
-    pd = NULL;   // To avoid compiler warning
+    // QgateController* pd = 
+
+    new QgateController(ctrlName, lowlevelPortAddress, maxNumAxes, 
+                        movingPollPeriod, idlePollPeriod, libPath);
+
+    // printf("queensgateNPC: Created %p\n", pd);
     return asynSuccess;
 }
 
@@ -48,7 +50,7 @@ asynStatus qgateAxisConfig(const char* ctrlName, int axisNum, const char* axisNa
     asynStatus result = asynSuccess;
 
     //XXX:
-    printf("about to create Axis obj for %s controller\n", ctrlName);
+    // printf("about to create Axis obj for %s controller\n", ctrlName);
 
     //Find controller
     QgateController* ctrl = (QgateController*)findAsynPortDriver(ctrlName);
@@ -61,12 +63,12 @@ asynStatus qgateAxisConfig(const char* ctrlName, int axisNum, const char* axisNa
     else
     {
         //XXX:
-        printf("For axis %d found one!: %p\n", axisNum, ctrl);
+        // printf("For axis %d found one!: %p\n", axisNum, ctrl);
 
         new QgateAxis(*ctrl, axisNum, axisName);
 
         //TODO: convert these printfs into asynPrint
-        printf("queensgateNPC: Axis %d '%s' created\n", axisNum, ctrlName);
+        printf("queensgateNPC: %s:Axis %d '%s' created\n", ctrlName, axisNum, axisName);
     }
     return result;
 }
@@ -90,22 +92,22 @@ static const iocshFuncDef qgateCtrlConfig_FuncDef = { "qgateCtrlConfig", 6, qgat
 
 static void qgateCtrlConfig_CallFunc(const iocshArgBuf *args) {
     // XXX: print parameters
-    printf("Controller CallFunc Params:\n");
-    for(int i=0; i<=5; i++)
-    {
-        switch(i) {
-            case 2:
-                printf("\t[%d]='%d'\n", i, args[i].ival);
-                break;
-            case 3:
-            case 4:
-                printf("\t[%d]='%f'\n", i, args[i].dval);
-                break;
-            default:
-                printf("\t[%d]='%s'\n", i, args[i].sval);
-                break;
-        }
-    }
+    // printf("Controller CallFunc Params:\n");
+    // for(int i=0; i<=5; i++)
+    // {
+    //     switch(i) {
+    //         case 2:
+    //             printf("\t[%d]='%d'\n", i, args[i].ival);
+    //             break;
+    //         case 3:
+    //         case 4:
+    //             printf("\t[%d]='%f'\n", i, args[i].dval);
+    //             break;
+    //         default:
+    //             printf("\t[%d]='%s'\n", i, args[i].sval);
+    //             break;
+    //     }
+    // }
     
     qgateControllerConfig(args[0].sval, args[1].sval, args[2].ival, 
                             args[3].dval, args[4].dval, args[5].sval);
@@ -121,17 +123,17 @@ static const iocshFuncDef qgateAxisConfig_FuncDef = { "qgateAxisConfig", 3, qgat
 
 static void qgateAxisConfig_CallFunc(const iocshArgBuf *args) {
     // XXX: print parameters
-    printf("Axis CallFunc Params:\n");
-    for(int i=0; i<=2; i++)
-    {
-        if(i==1)
-            printf("\t[%d]='%d'\n", i, args[i].ival);
-        else
-        {
-            printf("\t[%d]='%s'\n", i, args[i].sval);
-        }
+    // printf("Axis CallFunc Params:\n");
+    // for(int i=0; i<=2; i++)
+    // {
+    //     if(i==1)
+    //         printf("\t[%d]='%d'\n", i, args[i].ival);
+    //     else
+    //     {
+    //         printf("\t[%d]='%s'\n", i, args[i].sval);
+    //     }
+    // }
             
-    }
     qgateAxisConfig(args[0].sval, args[1].ival, args[2].sval);
 }
 

@@ -3,7 +3,6 @@
 
 #include <asynMotorController.h>
 #include <asynMotorAxis.h>
-//#include <AsynParams.h>
 #include <TakeLock.h>
 #include <FreeLock.h>
 
@@ -15,7 +14,8 @@
 #define MICRONS_TO_PM(value)    ((value) * 1.0e6 )
 
 /*
- * command strings (basic for operation; not for cfg nor calibration):
+ * command strings (basic for operation; not intended for advanced configuration 
+ * nor calibration):
  *  controller.status.get                   Controller status
                     reply: (security,channels,status)=(Queensgate production,3,0x0000)
  *  identity.hardware.part.get              Controller part number
@@ -85,10 +85,6 @@ char* mytime();
     printQGList(listresVal);                                        \
 }
 
-//---
-// class QgateController;
-// class QgateAxis;
-
 class QgateController : public asynMotorController {
     friend class QgateAxis;
 public:
@@ -125,23 +121,17 @@ protected:
 
 protected:
     /* Methods for use by the axes */
-    void addAxis(const int axisNum);
     bool isAxisPresent(int axisNum);
     DllAdapter& getAdapter();
     DllAdapterStatus moveCmd(std::string cmd, int axisNum, double value);
     DllAdapterStatus getCmd(std::string cmd, int axisNum, std::string &value, int valueID=0);
 
     /* Parameter notification methods */
-    //void onCalibrateSensor(TakeLock& takeLock, int list, int value);
-    //void onPowerSave(TakeLock& takeLock, int list, int value);
-    //void onSensorTypeChange(TakeLock& takeLock, int list, int value);
     bool isConnected();
 private:
     asynUser* serialPortUser;
     DllAdapter qg;  //Queensgate adapter
     /* Config */
-    std::string nameCtrl;
-    // std::string portDevice;   //Device string
     std::string versionDLL; //XXX: remove this one
     std::string model;
     std::string serialNum;
@@ -149,20 +139,18 @@ private:
     std::string securityLevel;
     int numAxes;    //Configured amount of axes
     int maxAxes;    //Max amount of axes supported by the connected controller
-    // int connectionPollRequired;
     void printdefmoves();
 protected:
     /* Status */
+    std::string nameCtrl;
     bool initialised;   //Library comms successfully initialised
     bool connected;
     typedef std::vector<std::string> DeferredMoves;
     DeferredMoves deferredMove; //Stores the move commands to be deferred
     bool deferringMode;         //Moves are being deferred
-    // char replyBuffers[MAX_N_REPLIES][256];
-    // epicsEventId replyEvents[MAX_N_REPLIES];
 private:
     asynStatus initController(const char* portDevice, const char* libPath);
     asynStatus initialChecks();
 };
 
-#endif //ONCE
+#endif //QGATENPCcontroller_H_

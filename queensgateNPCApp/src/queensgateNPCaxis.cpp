@@ -9,8 +9,6 @@
 #include <epicsMutex.h>
 #include <iocsh.h>
 #include <asynOctetSyncIO.h>
-#include <TakeLock.h>
-#include <FreeLock.h>
 
 #include "queensgateNPCaxis.hpp"
 
@@ -30,16 +28,10 @@ QgateAxis::QgateAxis(QgateController &controller,
         , connected(false)
         , _pollCounter(SLOW_POLL_FREQ_CONST)
 {
-    printf("creating QgateAxis %d '%s'\n", axisNumber, axisName);
-    
-    //XXX: addAxis really needed?
-    controller.addAxis(axisNumber);
+    // printf("creating QgateAxis %d '%s'\n", axisNumber, axisName);
     
     setIntegerParam(ctrler.motorStatus_, 0);
     setIntegerParam(ctrler.motorStatusCommsError_, 1);
-    //TODO: move initAxis to poll for delayed init?
-    // connected = initAxis();
-    initAxis();
 }
 
 QgateAxis::~QgateAxis() {}
@@ -52,20 +44,12 @@ bool QgateAxis::initAxis() {
     // but nevertheless it is a closed loop.
     setClosedLoop(true);
     setIntegerParam(ctrler.motorStatusFollowingError_, 0);
-    setDoubleParam(ctrler.profileFollowingErrors_, 0.0);
-
-    //XXX:
-    printf("]]]]]]]]]]]]]]]initAxis %d\n", axisNum);
 
     result = getStatusConnected();
     if(result) {
         ctrler.getCmd("identity.stage.part.get", axisNum, value);
         setStringParam(ctrler.QG_AxisModel, value.c_str());
     }
-    
-    //XXX:
-    // printf("]]]]]]]]]]]]]]]axis %d initially %sconnected\n", axisNum, (result)? "":"DIS");
-
     return result;
 }
 
@@ -77,10 +61,6 @@ asynStatus QgateAxis::poll(bool *moving) {
     bool result = false;
     bool wasconnected = connected;
 
-    //XXX:printf
-    printf("%s:\tAxis %d (%d) STATUS=%d polling: %sconnected\n", mytime(), 
-            this->axisNum, this->axisNo_, status_.status, (connected)? "":"DIS" );
-    
     if(ctrler.connected) {
         //fast poll
         result |= getStatusConnected();
@@ -90,14 +70,10 @@ asynStatus QgateAxis::poll(bool *moving) {
         }
         //slow poll
         if (_pollCounter++ % SLOW_POLL_FREQ_CONST == 0) {
-
-            // XXX:
-            // printf("%s:SLOWPOLL}}}}}}}}}}}}}}}}}\n", mytime());
-
             result |= getAxisMode();
         }
     } else {
-        //TODO: Axis reconnection poll (slow)
+        //Axis reconnection poll (slow)
         //Slow poll
         if (_pollCounter++ % SLOW_POLL_FREQ_CONST == 0) {
             result |= getStatusConnected();     //Update Axis status
@@ -108,7 +84,7 @@ asynStatus QgateAxis::poll(bool *moving) {
     //Detect connection state change again for additional actions
     if(wasconnected != connected) {
         if(wasconnected) {
-            *moving = false;    //Just disconnected
+            *moving = false;    //Just lost connection
         } else {
             initAxis();         //Been re-connected
         }
@@ -119,9 +95,6 @@ asynStatus QgateAxis::poll(bool *moving) {
 
 bool QgateAxis::getStatusConnected() {
     bool result = false;    //Default for when controller not connected
-
-    //XXX: 
-    // printf(":::::::::Checking if axis %d connected (CTRL=%d)\n", axisNum, ctrler.connected);
 
     if(ctrler.connected) {
         std::string value;
@@ -144,10 +117,6 @@ bool QgateAxis::getStatusConnected() {
         setIntegerParam(ctrler.motorStatusCommsError_, !connected);
         //Update status of related PVs
         setIntegerParam(ctrler.QG_AxisConnected, connected);
-
-        //XXX: 
-        // printf(":::::::::axis %d is now %sconnected (%d)\n", axisNum, (result)?"":"DIS", result);
-                
     }
     return connected;
 }
@@ -165,7 +134,6 @@ bool QgateAxis::getInLPFPosition() {
     std::string value;
     if(ctrler.getCmd("stage.status.in-position.lpf-confirmed.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
         setIntegerParam(ctrler.QG_AxisInPosLPF, atoi(value.c_str()));
-        // TODO: setPosition() call here?
         return true;
     }
     return false;
@@ -185,11 +153,12 @@ bool QgateAxis::getPosition() {
     }
     double positionMicrons = PM_TO_MICRONS(atof(value.c_str()));
     double position = atof(value.c_str());
-    asynPrint(pasynUser_, ASYN_TRACE_FLOW, "Axis %d measured pos=%lf microns (%lf pm)\n", 
-                axisNum, positionMicrons, position);
+    asynPrint(pasynUser_, ASYN_TRACE_FLOW, "Queensgate %s Axis %d measured pos=%lf microns (%lf pm)\n", 
+                ctrler.nameCtrl.c_str(), axisNum, positionMicrons, position);
 
-    //XXX:printf
-    printf("/-/-/-/-/-/Stage1 measured pos=%lf microns (%lf pm)\n", positionMicrons, position);
+    //XXX:printf values
+    // printf("/-/-/-/-/-/Stage %s %d measured pos=%lf microns (%lf pm)\n", 
+    //         ctrler.nameCtrl.c_str(), axisNum, positionMicrons, position);
     
     // setDoubleParam(QG_AxisPos, position);
     setDoubleParam(ctrler.motorEncoderPosition_, position);
@@ -197,7 +166,6 @@ bool QgateAxis::getPosition() {
     return true;
 }
 
-#ifdef MOVEAXIS
 /** Move the motor to an absolute location or by a relative amount.
   * \param[in] position  The absolute position to move to (if relative=0) or the relative distance to move 
   * by (if relative=1). Units=steps.
@@ -213,9 +181,9 @@ asynStatus QgateAxis::move(double position, int relative,
     }
 
     //XXX:
-    printf("%s:MOOOOOOVEEEEEEE!!!!! QgateNPC.move: pos=%lf, relative=%d, minV=%lf, maxV=%lf, acc=%lf\n",
-            mytime(), position, relative,
-            minVelocity, maxVelocity, acceleration);
+    // printf("%s:MOOOOOOVEEEEEEE!!!!! QgateNPC.move: pos=%lf, relative=%d, minV=%lf, maxV=%lf, acc=%lf\n",
+    //         mytime(), position, relative,
+    //         minVelocity, maxVelocity, acceleration);
 
     // Start the move
 	TakeLock takeLock(&ctrler, /*alreadyTaken=*/true);
@@ -223,8 +191,9 @@ asynStatus QgateAxis::move(double position, int relative,
 
     //Note: NPC controller have pre-configured movement parameters (e.g. velocity, accel)
     if(ctrler.moveCmd("stage.position.absolute-command.set", axisNum, position) != DLL_ADAPTER_STATUS_SUCCESS) {
+        //TODO: log error
         //XXX:
-        printf("SE JODIO LA VAINA !!!!\n");
+        printf("COMMAND FAILED ON THE CONTROLLER !!!!\n");
         return asynError;
     }       
     //XXX:
@@ -233,6 +202,7 @@ asynStatus QgateAxis::move(double position, int relative,
     }
 
     if(relative) {
+        //TODO: relative move
     //     ctrler.moveCmd("stage.position.command.set", physicalAxis(), position);
     //     //ctrler.doMove(physicalAxis(), position);
     // } else {
@@ -272,34 +242,8 @@ asynStatus QgateAxis::move(double position, int relative,
     // // pollStatus(freeLock);
     // return status;
     }
-#endif
     return asynSuccess;
 }
-
-// /** Jog axis command
-//  * \param[in] minVelocity The minimum velocity during the move
-//  * \param[in] maxVelocity The maximum velocity during the move
-//  * \param[in] acceleration The acceleration to use
-//  */
-// asynStatus QgateAxis::moveVelocity(double minVelocity,
-//         double maxVelocity, double acceleration) {
-//     //TODO: what to do here for jogging? call move repeatedly relative from the current pos?
-//     printf("COMMANDED TO JOG: v=[%lf, %lf], acc=%lf\n", minVelocity, maxVelocity, acceleration);
-//     return asynSuccess;
-// }
-
-// /** Set the current position of the motor.
-//   * \param[in] position The new absolute motor position that should be set in the hardware. Units=steps.*/
-// asynStatus QgateAxis::setPosition(double position) {
-//     if(!connected) {
-//         // If axis not connected to a stage, ignore
-//         return asynSuccess;
-//     }
-//     //TODO: what are we supposed to do here?
-//     printf("++++++++++++++++++++++++++++++++++++set POSITION to %lf, yes\n", position);
-
-//     return asynSuccess;
-// }
 
 asynStatus QgateAxis::stop(double acceleration) {
     if(!connected) {
@@ -320,8 +264,10 @@ asynStatus QgateAxis::stop(double acceleration) {
 
     double position;
     if(!getPosition()) {
+        
         //XXX:
         printf("ignoring stop...\n");
+
         return asynSuccess;
     }
     ctrler.getDoubleParam(axisNo_, ctrler.motorPosition_, &position);
@@ -330,20 +276,13 @@ asynStatus QgateAxis::stop(double acceleration) {
     //Note: NPC controller have pre-configured movement parameters (e.g. velocity, accel)
     if(ctrler.moveCmd("stage.position.absolute-command.set", axisNum, position) != DLL_ADAPTER_STATUS_SUCCESS) {
         //XXX:
-        printf("SE JODIO LA VAINA del STOP !!!!\n");
+        printf("FAILED STOP COMMAND !!!!\n");
         return asynError;
     }       
     //XXX:
     else {
         printf("COMMANDED TO STOP !!!!\n");
     }
+
     return asynSuccess;
-}
-
-int QgateAxis::physicalAxis() {
-	return axisNum;
-}
-
-bool QgateAxis::isConnected() {
-    return connected;
 }

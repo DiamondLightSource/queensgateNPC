@@ -21,18 +21,18 @@
 #Generated basic motor records for ASYN device
 substitute "VELO=1, VBAS=1, ACCL=1, BDST=0, BVEL=0, BACC=0.1"
 substitute "M=$(Q), DESC=$(name), DTYP=asynMotor, ADDR=$(AXIS)"
-substitute "DIR=$(dir=Pos), MRES=$(mres=0.000001)"
+substitute "DIR=$(dir=Pos), MRES=$(mres=0.000001), TWV=1"
 substitute "PREC=$(prec=6), EGU=$(egu=um), DHLM=$(dhlm=10), DLLM=$(dllm=-10)"
 substitute "INIT="
-include "basic_asyn_motor.db"
-#include "basic_asyn_motor.template"
+#include "basic_asyn_motor.db"
+include "basic_asyn_motor.template"
 
 
 # TODO: to be removed??
 record(bi, "$(P)$(Q):INPOSIT")
 {
     #stage in position, after a Low-Pass-Filter check
-    field(DESC, "in position LPFconfirm")
+    field(DESC, "in position LPF")
     field(SCAN, "I/O Intr")
     #field(SCAN, ".5 second")
     field(DTYP, "asynInt32")

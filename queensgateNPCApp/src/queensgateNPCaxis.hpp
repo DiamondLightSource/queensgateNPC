@@ -3,23 +3,13 @@
 
 #include <asynMotorController.h>
 #include <asynMotorAxis.h>
-// #include <AsynParams.h>
 
-#include "include/controller_interface.h"
-#include "include/dll_adapter.hpp"
-
-// #include <TakeLock.h>
-// #include <FreeLock.h>
+// #include "include/controller_interface.h"
+// #include "include/dll_adapter.hpp"
 #include "queensgateNPCcontroller.hpp"
-
-//XXX:
-#define MOVEAXIS 1
-
-// class QgateController : public asynMotorController;
 
 class QgateAxis : public asynMotorAxis 
 {
-// friend class QgateController : public asynMotorController;
 public:
     QgateAxis(QgateController &controller,
                 int axisNumber,
@@ -29,23 +19,10 @@ public:
 public:
     // Overridden from asynMotorAxis
     virtual asynStatus poll(bool *moving);
-#ifdef MOVEAXIS
     virtual asynStatus move(double position, int relative,
             double minVelocity, double maxVelocity, double acceleration);
     virtual asynStatus stop(double acceleration);
-#endif
-    /*            
-    virtual asynStatus moveVelocity(double minVelocity, double maxVelocity, double acceleration);
-    virtual asynStatus setPosition(double position);
-    virtual asynStatus home(double minVelocity,
-            double maxVelocity, double acceleration, int forwards);
-    */
-protected:
-    //Used by QgateController
-    virtual int physicalAxis();
-    virtual bool isConnected();
 private:
-    //#define SLOW_POLL_FREQ_CONST (8)
     static const int SLOW_POLL_FREQ_CONST=8;
     QgateController& ctrler;
     DllAdapter& qg;  //Queensgate adapter
