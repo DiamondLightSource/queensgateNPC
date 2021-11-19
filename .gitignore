@@ -2,7 +2,6 @@ bin
 data
 db
 dbd
-include
 lib
 .idea
 *.py[co]
