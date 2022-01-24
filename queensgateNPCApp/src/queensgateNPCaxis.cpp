@@ -133,17 +133,18 @@ bool QgateAxis::getAxisMode() {
 bool QgateAxis::getInLPFPosition() {
     std::string value;
     if(ctrler.getCmd("stage.status.in-position.lpf-confirmed.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
-        setIntegerParam(ctrler.QG_AxisInPosLPF, atoi(value.c_str()));
-        return true;
+        int inPos = atoi(value.c_str());
+        setIntegerParam(ctrler.QG_AxisInPosLPF, inPos);
+        setIntegerParam(ctrler.motorStatusDone_, inPos);
+        setIntegerParam(ctrler.motorStatusMoving_, !inPos);
+        return true; //success getting position status
     }
-    return false;
+    return false;   //failed
 }
+
 bool QgateAxis::getStatusMoving() {
     //TODO: use unconfirmed or LPF position according to motor record config?
-    bool inPos = getInLPFPosition();
-    setIntegerParam(ctrler.motorStatusDone_, inPos);
-    setIntegerParam(ctrler.motorStatusMoving_, !inPos);
-    return inPos;
+    return getInLPFPosition();
 }
 
 bool QgateAxis::getPosition() {
