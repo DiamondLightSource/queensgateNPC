@@ -38,10 +38,10 @@ private:
 private:
     bool initAxis();
     bool getStatusConnected();
-    bool getStatusMoving();
+    bool getStatusMoving(bool &moving);
     bool getAxisMode();
     bool getPosition();
-    bool getInLPFPosition();
+    bool getInLPFPosition(bool &moving);
 };
 
 #endif //ONCE

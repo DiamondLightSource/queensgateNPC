@@ -66,7 +66,7 @@ asynStatus QgateAxis::poll(bool *moving) {
         result |= getStatusConnected();
         if(result) {
             result |= getPosition();    
-            *moving = !getStatusMoving();
+            result |= getStatusMoving(*moving);
         }
         //slow poll
         if (_pollCounter++ % SLOW_POLL_FREQ_CONST == 0) {
@@ -130,21 +130,22 @@ bool QgateAxis::getAxisMode() {
     return false;
 }
 
-bool QgateAxis::getInLPFPosition() {
+bool QgateAxis::getInLPFPosition(bool &moving) {
     std::string value;
     if(ctrler.getCmd("stage.status.in-position.lpf-confirmed.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
         int inPos = atoi(value.c_str());
         setIntegerParam(ctrler.QG_AxisInPosLPF, inPos);
         setIntegerParam(ctrler.motorStatusDone_, inPos);
         setIntegerParam(ctrler.motorStatusMoving_, !inPos);
+        moving = !inPos;
         return true; //success getting position status
     }
     return false;   //failed
 }
 
-bool QgateAxis::getStatusMoving() {
+bool QgateAxis::getStatusMoving(bool &moving) {
     //TODO: use unconfirmed or LPF position according to motor record config?
-    return getInLPFPosition();
+    return getInLPFPosition(moving);
 }
 
 bool QgateAxis::getPosition() {
