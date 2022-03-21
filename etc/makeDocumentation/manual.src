@@ -5,8 +5,8 @@ EPICS support for Queensgate NPC-D-5xxx and 6xxx series controllers using <a hre
 You can also link to \ref thing.vdb "internally generated documentation" with alternate text, or by just by mentioning its name, e.g. thing.vdb
 
 \section bugs_sec Known Bugs
-- Only tested on NPC-D-6330
-- Only working for Prior's SDK 2.1.187
+- Only tested on NPC-D-6330 & NS-6300
+- Working for Prior's SDK > 2.2
 
 \section user_sec User Manual
 This section contains instructions for the end user
