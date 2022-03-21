@@ -131,6 +131,7 @@ bool QgateAxis::getAxisMode() {
 }
 
 bool QgateAxis::getInLPFPosition(bool &moving) {
+    bool result = false;   //feedback from controller failed by default
     std::string value;
     if(ctrler.getCmd("stage.status.in-position.lpf-confirmed.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
         int inPos = atoi(value.c_str());
@@ -138,9 +139,9 @@ bool QgateAxis::getInLPFPosition(bool &moving) {
         setIntegerParam(ctrler.motorStatusDone_, inPos);
         setIntegerParam(ctrler.motorStatusMoving_, !inPos);
         moving = !inPos;
-        return true; //success getting position status
+        result = true; //success getting position status
     }
-    return false;   //failed
+    return result;   //failed
 }
 
 bool QgateAxis::getStatusMoving(bool &moving) {
@@ -170,11 +171,11 @@ bool QgateAxis::getPosition() {
 
 /** Move the motor to an absolute location or by a relative amount.
   * \param[in] position  The absolute position to move to (if relative=0) or the relative distance to move 
-  * by (if relative=1). Units=steps.
-  * \param[in] relative  Flag indicating relative move (1) or absolute move (0).
-  * \param[in] minVelocity The initial velocity, often called the base velocity. Units=steps/sec.
-  * \param[in] maxVelocity The maximum velocity, often called the slew velocity. Units=steps/sec.
-  * \param[in] acceleration The acceleration value. Units=steps/sec/sec. */
+  * by (if relative=1). Units=microns.
+  * \param[in] relative  Flag indicating relative move (1) or absolute move (0). [NOT YET IMPLEMENTED in this method]
+  * \param[in] minVelocity The initial velocity, often called the base velocity. Units=steps/sec. [IGNORED in this method]
+  * \param[in] maxVelocity The maximum velocity, often called the slew velocity. Units=steps/sec. [IGNORED in this method]
+  * \param[in] acceleration The acceleration value. Units=steps/sec/sec. [IGNORED in this method]  */
 asynStatus QgateAxis::move(double position, int relative,
             double minVelocity, double maxVelocity, double acceleration) {
     if(!connected) {

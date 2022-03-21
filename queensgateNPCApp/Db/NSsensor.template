@@ -1,4 +1,4 @@
-# NPC series Queensgate NanoPositioner axis template
+# NS 6000 series Queensgate NanoSensor template
 
 # % macro, name, Axis (Stage) name
 # % macro, P, PV prefix for Queensgate axis
@@ -14,7 +14,6 @@
 # % macro, egu, engineering units
 
 # This associates the template with an edm screen
-#  gui, $(name), edm, queensgateNPC.edl, P=$(P), Q=$(Q)
 # % gui, $(name), edm, motor.edl, motor=$(P)$(Q)
 # % gui, $(name), edmembed, motor-embed-small.edl, motor=$(P)$(Q),filename=motor.edl,box-label=$(name)
 
@@ -27,21 +26,6 @@ substitute "INIT="
 #include "basic_asyn_motor.db"
 include "basic_asyn_motor.template"
 
-
-# TODO: to be removed??
-record(bi, "$(P)$(Q):INPOSIT")
-{
-    #stage in position, after a Low-Pass-Filter check
-    field(DESC, "in position LPF")
-    field(SCAN, "I/O Intr")
-    #field(SCAN, ".5 second")
-    field(DTYP, "asynInt32")
-    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSLPF")
-    field(PINI, "1")
-    #XXX:
-    field(ZNAM, "out position")
-    field(ONAM, "Confirmed")
-}
 
 record(stringin, "$(P)$(Q):AXISNAME")
 {

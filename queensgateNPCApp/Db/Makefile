@@ -16,6 +16,8 @@ include $(TOP)/configure/CONFIG
 
 DB += NPCcontroller.template
 DB += NPCaxis.template
+DB += NScontroller.template
+DB += NSsensor.template
 
 #----------------------------------------------------
 # In a Diamond IOC Application, build db files from

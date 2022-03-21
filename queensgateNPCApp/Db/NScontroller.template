@@ -1,4 +1,4 @@
-# NPC series Queensgate NanoPositioner controller template
+# NS 6000 series Queensgate NanoSensor controller template
 # Note that Axis 0 is the controller itself.
 
 # % macro, name, Controller GUI name
@@ -93,17 +93,4 @@ record(stringin, "$(P)$(Q):SECURITY")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_SECURITY")
     field(PINI, "1")
-}
-
-#Deferred moves. Enables storage of 1 move of each axis when set, and
-#               execute all movements at once by unsetting it back
-record(bo, "$(P)$(Q):DEFER") {
-    field(DESC, "Deferred move control")
-    field(SCAN, "Passive")
-    field(DTYP, "asynInt32")
-    # field(DTYP, "asynUInt32Digital")
-    field(OUT, "@asynMask($(PORT),0,$(TIMEOUT))MOTOR_DEFER_MOVES")
-    field(ZNAM, "normal")
-    field(ONAM, "defer")
-    field(VAL, "0")
 }

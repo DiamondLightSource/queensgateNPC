@@ -1,7 +1,7 @@
 queensgateNPC
 =======
 
-EPICS asyn driver for Queensgate NPC-D-5xxx and NPC-D-6xxx series compatible with PriorSDK 1.4.1 and up to 2.1.187 version.
+EPICS asyn driver for Queensgate NPC-D-5xxx and NPC-D-6xxx series compatible with PriorSDK 2.2 version and over.
 
 Credits and licensing
 ---------------------

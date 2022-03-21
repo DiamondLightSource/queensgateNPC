@@ -1,0 +1,798 @@
+4 0 1
+beginScreenProperties
+major 4
+minor 0
+release 1
+x 668
+y 209
+w 510
+h 238
+font "arial-medium-r-10.0"
+ctlFont "arial-medium-r-10.0"
+btnFont "arial-medium-r-10.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 14
+ctlFgColor2 index 0
+ctlBgColor1 index 0
+ctlBgColor2 index 14
+topShadowColor index 0
+botShadowColor index 14
+showGrid
+snapToGrid
+gridSize 5
+endScreenProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 10
+y 10
+w 485
+h 170
+lineColor index 14
+fill
+fillColor index 3
+endObjectProperties
+
+# (Byte)
+object ByteClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 210
+y 15
+w 15
+h 15
+controlPv "$(PREFIX):$(CONTROL):MCOMMSF"
+lineColor index 14
+onColor index 20
+offColor index 24
+numBits 1
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 135
+y 20
+w 70
+h 12
+font "arial-medium-r-12.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Comms fail"
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 10
+y 5
+w 107
+h 14
+font "arial-medium-r-12.0"
+fgColor index 14
+bgColor index 10
+value {
+  "  Master Controller  "
+}
+autoSize
+border
+endObjectProperties
+
+# (Button)
+object activeButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 155
+y 190
+w 195
+h 35
+fgColor index 14
+onColor index 36
+offColor index 3
+inconsistentColor index 21
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(PREFIX):$(CONTROL):DEFER"
+onLabel "Deferred Moves"
+offLabel "Normal Moves"
+labelType "literal"
+3d
+font "arial-medium-r-12.0"
+objType "controls"
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 335
+y 40
+w 155
+h 135
+
+beginGroup
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 335
+y 45
+w 155
+h 130
+lineColor index 14
+fill
+fillColor index 3
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 345
+y 100
+w 135
+h 25
+controlPv "$(PREFIX):$(MASTER3).RBV"
+font "arial-bold-r-16.0"
+fontAlign "center"
+fgColor index 15
+fgAlarm
+bgColor index 10
+limitsFromDb
+precision 1
+nullColor index 0
+showUnits
+useAlarmBorder
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Textentry)
+object TextentryClass
+beginObjectProperties
+major 10
+minor 0
+release 0
+x 380
+y 60
+w 65
+h 35
+controlPv "$(PREFIX):$(MASTER3)"
+displayMode "decimal"
+precision 1
+fgColor index 25
+bgColor index 3
+font "arial-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 335
+y 40
+w 86
+h 14
+font "arial-medium-r-12.0"
+fgColor index 14
+bgColor index 10
+value {
+  "  $(MASTER3)  "
+}
+autoSize
+border
+endObjectProperties
+
+# (Byte)
+object ByteClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 460
+y 150
+w 15
+h 15
+controlPv "$(PREFIX):$(MASTER3).DMOV"
+lineColor index 14
+onColor index 15
+offColor index 19
+numBits 1
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 345
+y 140
+w 40
+h 25
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-10.0"
+buttonLabel "More"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "motor.edl"
+}
+symbols {
+  0 "motor=$(PREFIX):$(MASTER3)"
+}
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 455
+y 65
+w 25
+h 25
+fgColor index 25
+onColor index 3
+offColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(PREFIX):$(MASTER3).TWF"
+pressValue "1"
+onLabel "+"
+offLabel "+"
+3d
+font "arial-medium-r-10.0"
+endObjectProperties
+
+# (Textentry)
+object TextentryClass
+beginObjectProperties
+major 10
+minor 0
+release 0
+x 390
+y 135
+w 55
+h 35
+controlPv "$(PREFIX):$(MASTER3).TWV"
+displayMode "decimal"
+precision 1
+fgColor index 14
+bgColor index 3
+font "arial-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 455
+y 135
+w 25
+h 10
+font "arial-medium-r-10.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Done"
+}
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 345
+y 65
+w 25
+h 25
+fgColor index 25
+onColor index 3
+offColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(PREFIX):$(MASTER3).TWR"
+pressValue "1"
+onLabel "-"
+offLabel "-"
+3d
+font "arial-medium-r-10.0"
+endObjectProperties
+
+endGroup
+
+visPv "$(PREFIX):$(CONTROL):MAXES"
+visMin "3"
+visMax "4"
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 175
+y 40
+w 155
+h 135
+
+beginGroup
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 175
+y 45
+w 155
+h 130
+lineColor index 14
+fill
+fillColor index 3
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 185
+y 100
+w 135
+h 25
+controlPv "$(PREFIX):$(MASTER2).RBV"
+font "arial-bold-r-16.0"
+fontAlign "center"
+fgColor index 15
+fgAlarm
+bgColor index 10
+limitsFromDb
+precision 1
+nullColor index 0
+showUnits
+useAlarmBorder
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Textentry)
+object TextentryClass
+beginObjectProperties
+major 10
+minor 0
+release 0
+x 220
+y 60
+w 65
+h 35
+controlPv "$(PREFIX):$(MASTER2)"
+displayMode "decimal"
+precision 1
+fgColor index 25
+bgColor index 3
+font "arial-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 175
+y 40
+w 86
+h 14
+font "arial-medium-r-12.0"
+fgColor index 14
+bgColor index 10
+value {
+  "  $(MASTER2)  "
+}
+autoSize
+border
+endObjectProperties
+
+# (Byte)
+object ByteClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 300
+y 150
+w 15
+h 15
+controlPv "$(PREFIX):$(MASTER2).DMOV"
+lineColor index 14
+onColor index 15
+offColor index 19
+numBits 1
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 185
+y 140
+w 40
+h 25
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-10.0"
+buttonLabel "More"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "motor.edl"
+}
+symbols {
+  0 "motor=$(PREFIX):$(MASTER2)"
+}
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 295
+y 65
+w 25
+h 25
+fgColor index 25
+onColor index 3
+offColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(PREFIX):$(MASTER2).TWF"
+pressValue "1"
+onLabel "+"
+offLabel "+"
+3d
+font "arial-medium-r-10.0"
+endObjectProperties
+
+# (Textentry)
+object TextentryClass
+beginObjectProperties
+major 10
+minor 0
+release 0
+x 230
+y 135
+w 55
+h 35
+controlPv "$(PREFIX):$(MASTER2).TWV"
+displayMode "decimal"
+precision 1
+fgColor index 14
+bgColor index 3
+font "arial-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 295
+y 135
+w 25
+h 10
+font "arial-medium-r-10.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Done"
+}
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 185
+y 65
+w 25
+h 25
+fgColor index 25
+onColor index 3
+offColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(PREFIX):$(MASTER2).TWR"
+pressValue "1"
+onLabel "-"
+offLabel "-"
+3d
+font "arial-medium-r-10.0"
+endObjectProperties
+
+endGroup
+
+visPv "$(PREFIX):$(CONTROL):MAXES"
+visMin "2"
+visMax "4"
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 15
+y 40
+w 155
+h 135
+
+beginGroup
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 15
+y 45
+w 155
+h 130
+lineColor index 14
+fill
+fillColor index 3
+endObjectProperties
+
+# (Text Monitor)
+object activeXTextDspClass:noedit
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 25
+y 100
+w 135
+h 25
+controlPv "$(PREFIX):$(MASTER1).RBV"
+font "arial-bold-r-16.0"
+fontAlign "center"
+fgColor index 15
+fgAlarm
+bgColor index 10
+limitsFromDb
+precision 1
+nullColor index 0
+showUnits
+useAlarmBorder
+newPos
+objType "monitors"
+endObjectProperties
+
+# (Textentry)
+object TextentryClass
+beginObjectProperties
+major 10
+minor 0
+release 0
+x 60
+y 60
+w 65
+h 35
+controlPv "$(PREFIX):$(MASTER1)"
+displayMode "decimal"
+precision 1
+fgColor index 25
+bgColor index 3
+font "arial-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 15
+y 40
+w 65
+h 14
+font "arial-medium-r-12.0"
+fgColor index 14
+bgColor index 10
+value {
+  "  $(MASTER1)  "
+}
+autoSize
+border
+endObjectProperties
+
+# (Byte)
+object ByteClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 140
+y 150
+w 15
+h 15
+controlPv "$(PREFIX):$(MASTER1).DMOV"
+lineColor index 14
+onColor index 15
+offColor index 19
+numBits 1
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 25
+y 140
+w 40
+h 25
+fgColor index 43
+bgColor index 3
+topShadowColor index 1
+botShadowColor index 11
+font "arial-medium-r-10.0"
+buttonLabel "More"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "motor.edl"
+}
+symbols {
+  0 "motor=$(PREFIX):$(MASTER1)"
+}
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 135
+y 65
+w 25
+h 25
+fgColor index 25
+onColor index 3
+offColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(PREFIX):$(MASTER1).TWF"
+pressValue "1"
+onLabel "+"
+offLabel "+"
+3d
+font "arial-medium-r-10.0"
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 25
+y 65
+w 25
+h 25
+fgColor index 25
+onColor index 3
+offColor index 3
+topShadowColor index 1
+botShadowColor index 11
+controlPv "$(PREFIX):$(MASTER1).TWR"
+pressValue "1"
+onLabel "-"
+offLabel "-"
+3d
+font "arial-medium-r-10.0"
+endObjectProperties
+
+# (Textentry)
+object TextentryClass
+beginObjectProperties
+major 10
+minor 0
+release 0
+x 70
+y 135
+w 55
+h 35
+controlPv "$(PREFIX):$(MASTER1).TWV"
+displayMode "decimal"
+precision 1
+fgColor index 14
+bgColor index 3
+font "arial-medium-r-12.0"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 135
+y 135
+w 25
+h 10
+font "arial-medium-r-10.0"
+fontAlign "right"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Done"
+}
+endObjectProperties
+
+endGroup
+
+visPv "$(PREFIX):$(CONTROL):MAXES"
+visMin "1"
+visMax "4"
+endObjectProperties
+

@@ -7,7 +7,7 @@
 #include <FreeLock.h>
 
 #include "include/controller_interface.h"
-#include "include/dll_adapter.hpp"
+#include "adapter/include/dll_adapter.hpp"
 
 //Convert native picometres to micrometres
 #define PM_TO_MICRONS(value)    ((value) * 1.0e-6 )
