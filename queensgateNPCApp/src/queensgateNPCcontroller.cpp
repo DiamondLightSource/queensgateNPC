@@ -71,6 +71,7 @@ QgateController::QgateController(const char *portName,
             0) /* Default stack size */
     , numAxes(maxNumAxes)
     , maxAxes(QgateController::NOAXIS)
+    , portDevice(serialPortName)
     , nameCtrl(portName)
     , initialised(false)
     , connected(false)
@@ -100,6 +101,8 @@ QgateController::QgateController(const char *portName,
     createParam(QG_AxisPosCmd,          asynParamFloat64,   &QG_AxisPos);
     createParam(QG_AxisInPosLPFCmd,     asynParamInt32,     &QG_AxisInPosLPF);
 
+    bool initialStatus = true;
+
     // Uncomment this line to display list of params at startup
     // printf("AsynParams lists: %d\n", asynParams.numLists());
 
@@ -107,10 +110,21 @@ QgateController::QgateController(const char *portName,
     // this->reportParams(stdout,2); 
 
     /* Initialise Prior's Library controller */
-    if(initController(serialPortName, libraryPath) != asynSuccess) {
-        printf("Failed to initialise %s controller\n", portName);
+    if(initController(libraryPath) != asynSuccess) {
+        //printf("Failed to initialise %s controller\n", portName);
+        //TODO: set all offline
+        setIntegerParam(QG_CtrlConnected, 0);
+        initialStatus = false;
     }
     
+    /* Initialise Prior's controller session */
+    if(initSession() != asynSuccess) {
+        //printf("Failed to initialise %s controller session\n", portName);
+        //TODO: set all offline
+        setIntegerParam(QG_CtrlConnected, 0);
+        initialStatus = false;
+    }
+
     //XXX: not needed to connect asyn
     // Connect asyn to the serial port interface
     // int retries=3;
@@ -129,7 +143,7 @@ QgateController::QgateController(const char *portName,
     // if(retries<1) return;
 
     setIntegerParam(QG_CtrlMaxAxes, numAxes);
-    initialised = true;
+    initialised = initialStatus;
 
     //XXX: ?? // Synchronization variables
     // for (int i=0; i < MAX_N_REPLIES; i++) {
@@ -155,10 +169,8 @@ QgateController::~QgateController() {
     qg.CloseSession();
 }
 
-asynStatus QgateController::initController(const char* portDevice, const char* libPath) {
-    int dllVersionMajor, dllVersionMinor, dllVersionBuild;
+asynStatus QgateController::initController(const char* libPath) {
     DllAdapterStatus result = DLL_ADAPTER_STATUS_SUCCESS;
-    QGList listresName, listresVal;
     
     //XXX:
     printf("Initialising Controller: %s\n", libPath);
@@ -169,9 +181,16 @@ asynStatus QgateController::initController(const char* portDevice, const char* l
         printf("queensgateNPC: DLL file not found!\n");
         return asynError;
     }
+    return asynSuccess;
+}
+
+asynStatus QgateController::initSession() {
+    int dllVersionMajor, dllVersionMinor, dllVersionBuild;
+    DllAdapterStatus result = DLL_ADAPTER_STATUS_SUCCESS;
+    QGList listresName, listresVal;
 
     //XXX:
-    printf("Initialising Controller Session %s on %s\n", nameCtrl.c_str(), portDevice);
+    printf("Initialising Controller Session %s on %s\n", nameCtrl.c_str(), portDevice.c_str());
 
     //Open controller session
     // Note: Controller emulator uses "sim:/NPCxxxx" format, e.g. "sim:/NPC6330" for the NPC6330 controller
@@ -184,6 +203,9 @@ asynStatus QgateController::initController(const char* portDevice, const char* l
     /* Get non-mutable information */
     qg.GetDllVersion(dllVersionMajor, dllVersionMinor, dllVersionBuild);
     {
+        //XXX:
+        if(dllVersionMajor<0){ printf("No Version function!!!\n"); }
+
         char dll[100];
         snprintf(dll, 100, "%d.%d.%d", dllVersionMajor, dllVersionMinor, dllVersionBuild);
         setStringParam(QG_CtrlDLLver, dll);
@@ -257,14 +279,13 @@ asynStatus QgateController::poll() {
 	FreeLock freeLock(takeLock);
 
     //get controller status
-    //TODO: check security level change
     std::string reply;
     if(getCmd("controller.status.get", 0, reply, 2) != DLL_ADAPTER_STATUS_SUCCESS) {
         setIntegerParam(QG_CtrlConnected, 0);
         if(connected) {
             connected = false;
-            //TODO: tell all the axes that the controller is not connected
-            printf("QueensgateNPC: controller %s %s disconnected\n", model.c_str(), nameCtrl.c_str());
+            //XXX:
+            printf("%s QueensgateNPC: controller %s %s disconnected\n", mytime(), model.c_str(), nameCtrl.c_str());
         }
     } else {
         if(!connected) {
@@ -276,12 +297,22 @@ asynStatus QgateController::poll() {
                 return asynSuccess; //Controller disconnected: re-check on next polling
             }
             //XXX:
-            printf("QueensgateNPC: controller %s %s connected\n", model.c_str(), nameCtrl.c_str());
+            printf("%s QueensgateNPC: controller %s %s connected\n", mytime(), model.c_str(), nameCtrl.c_str());
             
             setIntegerParam(QG_CtrlConnected, 1);
             connected = true;
             if(getCmd("controller.status.get", 0, reply, 0) == DLL_ADAPTER_STATUS_SUCCESS) {
                 setStringParam(QG_CtrlSecurity, reply.c_str());
+            }
+        } else {
+            //TODO: check security level change
+            getCmd("controller.security.user.get", 0, securityLevel);
+            if(securityLevel.compare("Queensgate user")!=0) {
+                //TODO: set security level back to user -- this goes here or somewhere else?
+                QGList listresName, listresVal;
+                qg.DoCommand("controller.security.user.set 0xDEC0DED", listresName, listresVal);
+                //TODO: check outcome
+                getCmd("controller.security.user.get", 0, securityLevel);
             }
         }
     }
@@ -293,20 +324,6 @@ asynStatus QgateController::poll() {
 
     callParamCallbacks();
     return asynSuccess;
-}
-
-bool QgateController::isConnected() {
-    std::string partID;  //Store result here
-    if(getCmd("identity.hardware.part.get", 0, partID) == DLL_ADAPTER_STATUS_SUCCESS) {
-
-        //XXX:
-        printf("Check controller: %s\n", partID.c_str());    
-
-        return true;
-    } else {
-        printf("no controller answers :(\n");
-    }
-    return false;   //Not found
 }
 
 /** Processes deferred moves.
@@ -432,7 +449,9 @@ DllAdapterStatus QgateController::getCmd(std::string cmd, int axisNum, std::stri
         value = findQGList(listresVal, valueID);
         //XXX: printf("Stage %d request reply:'%s'\n", axisNum, value.c_str());
     } else {
-        printf("Failed request: %d\n", result);
+        std::ostringstream errorStr;
+        qg.GetErrorText(errorStr, result);
+        printf("Stage %s-%d Failed request %d: %s --> %s\n", nameCtrl.c_str(), axisNum, result, errorStr.str().c_str(), stageCmd.str().c_str());
         value.clear();  //empty string
     }
     return result;

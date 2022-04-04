@@ -8,6 +8,31 @@
 // #include "include/dll_adapter.hpp"
 #include "queensgateNPCcontroller.hpp"
 
+#include <time.h>
+#include <stdio.h>
+
+class myChrono {
+public:
+    myChrono() : startedT(false) {};
+    //starts chrono
+    void start() {
+        time(&startT);
+        startedT = true;
+    }
+    //returns elapsed time in seconds.
+    //Can be called repeatedly
+    double stop() {
+        if (!startedT) {
+            return 0;
+        }
+        time(&endT);
+        return difftime(endT,startT);
+    }
+private:
+    time_t startT,endT;
+    bool startedT;
+};
+
 class QgateAxis : public asynMotorAxis 
 {
 public:
@@ -30,7 +55,12 @@ private:
                     //Note that it differs from asynMotorAxis::axisNo_ being the axis index [0..n]
     std::string axis_name;  //name of the stage
     std::string axis_model; //(Reported) model of the stage
+    int moveTimeout;        //time out for giving up position reached, in seconds
+    myChrono chronox;
+
+    bool initialMoving;
     bool connected;
+    bool forceStop;         //Stop status was forced
     unsigned int _pollCounter;  //Iteration counter for slow polling
     // bool axis_inPos;        //in position (LPF-confirmed)
     //TODO: configure In-position for unconfirmed/LPF/Window
@@ -41,7 +71,7 @@ private:
     bool getStatusMoving(bool &moving);
     bool getAxisMode();
     bool getPosition();
-    bool getInLPFPosition(bool &moving);
+    bool getInLPFPosition(int &inPos);
 };
 
 #endif //ONCE

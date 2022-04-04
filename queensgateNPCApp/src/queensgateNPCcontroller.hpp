@@ -9,6 +9,15 @@
 #include "include/controller_interface.h"
 #include "adapter/include/dll_adapter.hpp"
 
+//XXX: debug printout
+//#define QGDEBUG 1
+static void nousemacro(...) {};
+#ifdef QGDEBUG 
+    #define aprintf printf
+#else
+    #define aprintf nousemacro
+#endif
+
 //Convert native picometres to micrometres
 #define PM_TO_MICRONS(value)    ((value) * 1.0e-6 )
 #define MICRONS_TO_PM(value)    ((value) * 1.0e6 )
@@ -70,7 +79,7 @@
 typedef std::list<std::string> QGList; //DLL DoCommand Result list
 #include <stdlib.h>
 
-//XXX: timestamp for debug
+//XXX: Queensgate List printout
 std::string findQGList(QGList &qglist, const int position);
 void printQGList(QGList &qglist);
 
@@ -127,7 +136,7 @@ protected:
     DllAdapterStatus getCmd(std::string cmd, int axisNum, std::string &value, int valueID=0);
 
     /* Parameter notification methods */
-    bool isConnected();
+    
 private:
     asynUser* serialPortUser;
     DllAdapter qg;  //Queensgate adapter
@@ -139,6 +148,7 @@ private:
     std::string securityLevel;
     int numAxes;    //Configured amount of axes
     int maxAxes;    //Max amount of axes supported by the connected controller
+    std::string portDevice;
     void printdefmoves();
 protected:
     /* Status */
@@ -149,7 +159,9 @@ protected:
     DeferredMoves deferredMove; //Stores the move commands to be deferred
     bool deferringMode;         //Moves are being deferred
 private:
-    asynStatus initController(const char* portDevice, const char* libPath);
+    //asynStatus initController(const char* portDevice, const char* libPath);
+    asynStatus initController(const char* libPath);
+    asynStatus initSession();
     asynStatus initialChecks();
 };
 

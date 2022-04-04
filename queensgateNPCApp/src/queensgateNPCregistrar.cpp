@@ -29,7 +29,7 @@ asynStatus qgateControllerConfig(const char* ctrlName,
     //  and then call in this code:
     //      t = qg.OpenSession("/tmp/vmodem0")
       
-    printf("New controller(%s, maxNumAxes=%d, lowPort=%s)...\n",ctrlName, maxNumAxes, lowlevelPortAddress);
+    //printf("New controller(%s, maxNumAxes=%d, lowPort=%s)...\n",ctrlName, maxNumAxes, lowlevelPortAddress);
 
     //XXX: remove pd, or leave for asynPrint?
     // QgateController* pd = 
