@@ -9,7 +9,7 @@ LIBRARY_IOC += queensgateNPC
 
 queensgateNPC_DIR = $(TOP)/queensgateNPCApp/src
 
-LIB_INSTALLS += ../qglib/controller_interface/bin/linux/controller_interface64.so
+LIB_INSTALLS += ../qglib/controller_interface64.so
 
 # DIRS += adapter/source
 # DIRS += adapter
