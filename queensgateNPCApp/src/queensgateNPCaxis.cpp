@@ -18,22 +18,31 @@
  * Driver object for stage (axis) control
  */
 QgateAxis::QgateAxis(QgateController &controller,
-                    int axisNumber,
-                    const char *axisName) :
+                    unsigned int axisNumber,
+                    const char *axisName,
+                    unsigned char axisType) :
         asynMotorAxis(&controller, axisNumber-1) //axis Num [1..n] converted to Index [0..n]
         , ctrler(controller)
         , qg(controller.getAdapter())
         , axisNum(axisNumber)
         , axis_name(axisName)
+        , isSensor(axisType == AXISTYPE_SENSOR)
         , moveTimeout(10)
         , initialMoving(false)
         , connected(false)
         , _pollCounter(SLOW_POLL_FREQ_CONST)
 {
-    // printf("creating QgateAxis %d '%s'\n", axisNumber, axisName);
+    printf("creating QgateAxis %d '%s' %d\n", axisNumber, axisName, axisType);
     
     //setIntegerParam(ctrler.motorStatus_, 0);
     //setIntegerParam(ctrler.motorStatusCommsError_, 1);
+    //setIntegerParam(ctrler.motorPowerStatus_, 0);
+    // setIntegerParam(ctrler.motorPowerOnDelay_, 0);
+    // setIntegerParam(ctrler.motorPowerOffDelay_, 0);
+    // setIntegerParam(ctrler.motorPowerAutoOnOff_, 0);
+    //2022/08/25 19:04:23.248 [Xtal1_ctrl,0,0] [asynPortDriver.cpp:1520] [motorPoller,0x261ffb0,10] asynPortDriver:getIntegerParam: port=Xtal1_ctrl error getting parameter 20 MOTOR_POWER_AUTO_ONOFF, in list 1, value undefined
+    //2022/08/25 19:04:23.248 [Xtal1_ctrl,0,0] [asynPortDriver.cpp:1520] [motorPoller,0x261ffb0,10] asynPortDriver:getDoubleParam: port=Xtal1_ctrl error getting parameter 22 MOTOR_POWER_OFF_DELAY, in list 1, value undefined
+
 }
 
 QgateAxis::~QgateAxis() {}
@@ -43,15 +52,15 @@ bool QgateAxis::initAxis() {
     bool result = false;
     
     //EPICS is not in charge of the closed loop operation, it is the Queensgate controller,
-    // but nevertheless it is a closed loop.
+    // but nevertheless it is defined a closed loop.
     setClosedLoop(true);
     setIntegerParam(ctrler.motorStatusFollowingError_, 0);
-
+    ctrler.deferredMove[axisNo_].clear();
     result = getStatusConnected();
     if(result) {
         ctrler.getCmd("identity.stage.part.get", axisNum, value);
         setStringParam(ctrler.QG_AxisModel, value.c_str());
-        initialMoving = true;
+        initialMoving = true;   //Specify initial moving query for first poll
     }
     return result;
 }
@@ -64,10 +73,13 @@ asynStatus QgateAxis::poll(bool *moving) {
     bool result = false;
     bool wasconnected = connected;
 
-    //Update initial staus of moving
+    //Update initial status of moving
     if(initialMoving) {
         initialMoving = false;
         *moving = false;
+        setIntegerParam(ctrler.motorPowerOnDelay_, 0);
+        setIntegerParam(ctrler.motorPowerOffDelay_, 0);
+        setIntegerParam(ctrler.motorPowerAutoOnOff_, 0);
         //XXX
         aprintf("%s %s START POLL\n", mytime(), axis_name.c_str());
         return asynSuccess;   //First run of the poll
@@ -160,13 +172,31 @@ bool QgateAxis::getInLPFPosition(int &inPos) {
         result = true;      //success getting position status
         forceStop = false;  //Already in position: no need to force stop
     }
-    return result;   //failed
+    return result;   //failed/success
 }
 
 bool QgateAxis::getStatusMoving(bool &moving) {
     bool result = false;    //Assume feedback from controller failed
-    int inPos = 0;          //Assume not in position
+    int inPos = 0;
+    int isMoving = 0;          //Assume not in position
 
+#if 1
+    if(isSensor) {
+        moving = false;     //Sensor never have indication of being moved
+        inPos = 1;
+        result = true;      //Assume success comms
+    } else {
+        std::string value;
+        if(ctrler.getCmd("stage.status.stage-moving.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
+            isMoving = atoi(value.c_str());
+            moving = isMoving;
+            //TODO: use unconfirmed or LPF position according to motor record config?
+            result = getInLPFPosition(inPos);
+        }
+    }
+    //return result;   //failed/success
+
+#else
     //TODO: use unconfirmed or LPF position according to motor record config?
     result = getInLPFPosition(inPos);
 
@@ -180,9 +210,8 @@ bool QgateAxis::getStatusMoving(bool &moving) {
     //Time out check
     if(!inPos) {
         if(chronox.stop() < moveTimeout) {
-
-            //XXX:
-            if(moving) aprintf("%s awaiting end of move\n", axis_name.c_str());
+            //XXX: remove
+            // if(moving) aprintf("%s awaiting end of move\n", axis_name.c_str());
 
         }
         else {
@@ -195,11 +224,12 @@ bool QgateAxis::getStatusMoving(bool &moving) {
             result = true; //Confirmed
         }
     }
+#endif
     //Update Motor Record status
     setIntegerParam(ctrler.QG_AxisInPosLPF, inPos);
-    setIntegerParam(ctrler.motorStatusDone_, inPos);
-    setIntegerParam(ctrler.motorStatusMoving_, !inPos);
-    moving = !inPos;
+    setIntegerParam(ctrler.motorStatusDone_, !moving);
+    setIntegerParam(ctrler.motorStatusMoving_, moving);
+    // moving = !inPos;
 
     return result;
 }
@@ -227,21 +257,27 @@ bool QgateAxis::getPosition() {
 /** Move the motor to an absolute location or by a relative amount.
   * \param[in] position  The absolute position to move to (if relative=0) or the relative distance to move 
   * by (if relative=1). Units=microns.
-  * \param[in] relative  Flag indicating relative move (1) or absolute move (0). [NOT YET IMPLEMENTED in this method]
+  * \param[in] relative  Flag indicating relative move (1) or absolute move (0). [NOT YET IMPLEMENTED in this method -- only absolute move]
   * \param[in] minVelocity The initial velocity, often called the base velocity. Units=steps/sec. [IGNORED in this method]
   * \param[in] maxVelocity The maximum velocity, often called the slew velocity. Units=steps/sec. [IGNORED in this method]
   * \param[in] acceleration The acceleration value. Units=steps/sec/sec. [IGNORED in this method]  */
 asynStatus QgateAxis::move(double position, int relative,
             double minVelocity, double maxVelocity, double acceleration) {
+    //XXX:
+     printf("%s:MOOOOOOVEEEEEEE!!!!! QgateNPC.move: pos=%lf, relative=%d, minV=%lf, maxV=%lf, acc=%lf\n",
+             mytime(), position, relative,
+             minVelocity, maxVelocity, acceleration);
     if(!connected) {
+        //XXX: 
+        printf(":::MOVE::%s %s-%d denied: NOT connected\n", mytime(), ctrler.nameCtrl.c_str(), axisNum);
         // If axis not connected to a stage, ignore
         return asynSuccess;
     }
-
-    //XXX:
-    // printf("%s:MOOOOOOVEEEEEEE!!!!! QgateNPC.move: pos=%lf, relative=%d, minV=%lf, maxV=%lf, acc=%lf\n",
-    //         mytime(), position, relative,
-    //         minVelocity, maxVelocity, acceleration);
+    if(isSensor) {
+        //XXX: 
+        printf(":::MOVE::%s %s-%d denied: is a sensor\n", mytime(), ctrler.nameCtrl.c_str(), axisNum);
+        return asynError;   //Refuse moving on Sensors
+    }
 
     // Start the move
 	TakeLock takeLock(&ctrler, /*alreadyTaken=*/true);
@@ -263,7 +299,7 @@ asynStatus QgateAxis::move(double position, int relative,
     else {
         printf("COMMANDED TO MOVE !!!!\n");
         forceStop = false;  //Cancel any previous stop request
-        chronox.start();    //Start counting for timeout
+        // chronox.start();    //Start counting for timeout
     }
 
     if(relative) {
@@ -316,8 +352,10 @@ asynStatus QgateAxis::stop(double acceleration) {
         // If axis not connected to a stage, ignore
         return asynSuccess;
     }
-
-    //TODO: clear axis' pending deferred command
+    if(isSensor) {
+        return asynError;   //Refuse moving-related commands on Sensors
+    }
+    //clear axis' pending deferred command
     if(ctrler.deferringMode) {
         ctrler.deferredMove[axisNo_].clear();
         return asynSuccess;

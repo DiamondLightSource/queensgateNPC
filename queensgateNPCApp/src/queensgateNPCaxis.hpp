@@ -37,11 +37,16 @@ class QgateAxis : public asynMotorAxis
 {
 public:
     QgateAxis(QgateController &controller,
-                int axisNumber,
-                const char *axisName
+                unsigned int axisNumber,
+                const char *axisName,
+                unsigned char axisType=AXISTYPE_STAGE
                 );
     virtual ~QgateAxis();
 public:
+    enum AXISTYPE {
+        AXISTYPE_STAGE = 0,
+        AXISTYPE_SENSOR = 1
+    };
     // Overridden from asynMotorAxis
     virtual asynStatus poll(bool *moving);
     virtual asynStatus move(double position, int relative,
@@ -51,10 +56,11 @@ private:
     static const int SLOW_POLL_FREQ_CONST=8;
     QgateController& ctrler;
     DllAdapter& qg;  //Queensgate adapter
-    int axisNum;    //Axis number for DLL [1..n]
+    unsigned int axisNum;    //Axis number for DLL [1..n]
                     //Note that it differs from asynMotorAxis::axisNo_ being the axis index [0..n]
     std::string axis_name;  //name of the stage
     std::string axis_model; //(Reported) model of the stage
+    bool isSensor;          //Configured as sensor (no motion) or active stage
     int moveTimeout;        //time out for giving up position reached, in seconds
     myChrono chronox;
 

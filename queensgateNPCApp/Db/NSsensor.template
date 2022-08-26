@@ -32,7 +32,6 @@ record(stringin, "$(P)$(Q):AXISNAME")
     field(SCAN, "I/O Intr")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_NAMEAXIS")
-    # field(PINI, "1")
 }
 
 record(stringin, "$(P)$(Q):STAGEMODEL")
@@ -41,7 +40,6 @@ record(stringin, "$(P)$(Q):STAGEMODEL")
     field(SCAN, "I/O Intr")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_STAGEMODEL")
-    # field(PINI, "1")
 }
 
 #XXX: to be removed

@@ -38,7 +38,6 @@ record(bi, "$(P)$(Q):INPOSIT")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSLPF")
     field(PINI, "1")
-    #XXX:
     field(ZNAM, "out position")
     field(ONAM, "Confirmed")
 }
@@ -48,7 +47,6 @@ record(stringin, "$(P)$(Q):AXISNAME")
     field(SCAN, "I/O Intr")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_NAMEAXIS")
-    # field(PINI, "1")
 }
 
 record(stringin, "$(P)$(Q):STAGEMODEL")
@@ -57,7 +55,6 @@ record(stringin, "$(P)$(Q):STAGEMODEL")
     field(SCAN, "I/O Intr")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_STAGEMODEL")
-    # field(PINI, "1")
 }
 
 #XXX: to be removed

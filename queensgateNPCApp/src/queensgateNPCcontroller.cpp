@@ -83,8 +83,6 @@ QgateController::QgateController(const char *portName,
     // pasynTrace->setTraceInfoMask(pasynUserSelf, 0xFF);
     // pasynTrace->setTraceFile(pasynUserSelf, stdout);
     
-    //printf("AsynParams lists: %d\n", asynParams.numLists());
-
     createParam(QG_CtrlStatusCmd,       asynParamOctet,     &QG_CtrlStatus);
     createParam(QG_CtrlConnectedCmd,    asynParamInt32,     &QG_CtrlConnected);
     createParam(QG_CtrlModelCmd,        asynParamOctet,     &QG_CtrlModel);
@@ -101,13 +99,12 @@ QgateController::QgateController(const char *portName,
     createParam(QG_AxisPosCmd,          asynParamFloat64,   &QG_AxisPos);
     createParam(QG_AxisInPosLPFCmd,     asynParamInt32,     &QG_AxisInPosLPF);
 
-    bool initialStatus = true;
+    bool initialStatus = true;  //Assume controller would be initialised
+    bool failedDLL = false;     //DLL initialisation (severe error)
 
     // Uncomment this line to display list of params at startup
-    // printf("AsynParams lists: %d\n", asynParams.numLists());
-
-    //print params
     // this->reportParams(stdout,2); 
+    //XXX: printf("AsynParams lists: %d\n", asynParams.numLists());
 
     /* Initialise Prior's Library controller */
     if(initController(libraryPath) != asynSuccess) {
@@ -115,6 +112,7 @@ QgateController::QgateController(const char *portName,
         //TODO: set all offline
         setIntegerParam(QG_CtrlConnected, 0);
         initialStatus = false;
+        failedDLL = true;   //DLL failed initialisation: can't recover from this!
     }
     
     /* Initialise Prior's controller session */
@@ -149,14 +147,15 @@ QgateController::QgateController(const char *portName,
     // for (int i=0; i < MAX_N_REPLIES; i++) {
     //     replyEvents[i] = epicsEventCreate(epicsEventEmpty);
     // }
-
-    /** Starts the motor poller thread.
-     * \param[in] movingPollPeriod The time in secs between polls when any axis is moving.
-     * \param[in] idlePollPeriod The time in secs between polls when no axis is moving.
-     * \param[in] forcedFastPolls The number of times to force the movingPollPeriod after waking up the poller.  
-     * This can need to be non-zero for controllers that do not immediately
-     * report that an axis is moving after it has been told to start. */
-    startPoller(movingPollPeriod, idlePollPeriod, /*forcedFastPolls-*/3);
+    if(!failedDLL) {
+        /** Starts the motor poller thread.
+         * \param[in] movingPollPeriod The time in secs between polls when any axis is moving.
+         * \param[in] idlePollPeriod The time in secs between polls when no axis is moving.
+         * \param[in] forcedFastPolls The number of times to force the movingPollPeriod after waking up the poller.  
+         * This can need to be non-zero for controllers that do not immediately
+         * report that an axis is moving after it has been told to start. */
+        startPoller(movingPollPeriod, idlePollPeriod, /*forcedFastPolls-*/3);
+    }
 }
 
 QgateController::~QgateController() {
@@ -347,7 +346,7 @@ asynStatus QgateController::setDeferredMoves(bool deferMoves) {
         }
             
         //XXX:
-        printf("Deferred moves requested to Flush: '%s'\n", syncMove.c_str());
+        printf("Deferred moves requested to Flush: '\n%s'\n", syncMove.c_str());
 
         deferringMode = false;
         result = qg.DoCommand(syncMove.c_str(), listresName, listresVal);
@@ -386,6 +385,7 @@ DllAdapterStatus QgateController::moveCmd(std::string cmd, int axisNum, double v
     // printf("Function %s\n", functionName);
     //asynPrint(pasynUser, ASYN_TRACEIO_DRIVER, "Function %s=%d\n", functionName, function);
    
+    //Compose move command for controller
     std::ostringstream stageCmd;
     stageCmd << cmd << " " << axisNum << " " << std::fixed << value;
 

@@ -52,6 +52,8 @@ static void nousemacro(...) {};
                     reply: (value)=(1) 
  *  stage.status.in-position.lpf-confirmed.get <channel>            Stage “in position” state confirmed by LPF algorithm
                     reply: (value)=(1)
+    stage.status.stage-moving.get <channel>                         Stage moving status
+                    reply: (value)=(1)      [0 or 1]
     stage.mode.digital-command.get <channel>      Stage control mode (digital means from PC/serial/USB)
                     reply: (value)=(1)      [0 or 1]
  */

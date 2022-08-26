@@ -46,7 +46,7 @@ asynStatus qgateControllerConfig(const char* ctrlName,
  * param[in] axisNum The number of this axis
  * param[in] axisNum Name assigned to this axis
  */
-asynStatus qgateAxisConfig(const char* ctrlName, int axisNum, const char* axisName) {
+asynStatus qgateAxisConfig(const char* ctrlName, unsigned int axisNum, const char* axisName, unsigned char axisType=0) {
     asynStatus result = asynSuccess;
 
     //XXX:
@@ -65,10 +65,10 @@ asynStatus qgateAxisConfig(const char* ctrlName, int axisNum, const char* axisNa
         //XXX:
         // printf("For axis %d found one!: %p\n", axisNum, ctrl);
 
-        new QgateAxis(*ctrl, axisNum, axisName);
+        new QgateAxis(*ctrl, axisNum, axisName, axisType);
 
         //TODO: convert these printfs into asynPrint
-        printf("queensgateNPC: %s:Axis %d '%s' created\n", ctrlName, axisNum, axisName);
+        printf("queensgateNPC: %s:Axis %d '%s' %d created\n", ctrlName, axisNum, axisName, axisType);
     }
     return result;
 }
@@ -116,10 +116,12 @@ static void qgateCtrlConfig_CallFunc(const iocshArgBuf *args) {
 static const iocshArg qgateAxisConfig_Arg0 = { "controller port name", iocshArgString };
 static const iocshArg qgateAxisConfig_Arg1 = { "axis index number", iocshArgInt };
 static const iocshArg qgateAxisConfig_Arg2 = { "axis name", iocshArgString };
+static const iocshArg qgateAxisConfig_Arg3 = { "axis type", iocshArgInt };
 static const iocshArg * const qgateAxisConfig_Args[] = { &qgateAxisConfig_Arg0, 
                                                         &qgateAxisConfig_Arg1, 
-                                                        &qgateAxisConfig_Arg2 };
-static const iocshFuncDef qgateAxisConfig_FuncDef = { "qgateAxisConfig", 3, qgateAxisConfig_Args };
+                                                        &qgateAxisConfig_Arg2,
+                                                        &qgateAxisConfig_Arg3 };
+static const iocshFuncDef qgateAxisConfig_FuncDef = { "qgateAxisConfig", 4, qgateAxisConfig_Args };
 
 static void qgateAxisConfig_CallFunc(const iocshArgBuf *args) {
     // XXX: print parameters
@@ -134,7 +136,7 @@ static void qgateAxisConfig_CallFunc(const iocshArgBuf *args) {
     //     }
     // }
             
-    qgateAxisConfig(args[0].sval, args[1].ival, args[2].sval);
+    qgateAxisConfig(args[0].sval, args[1].ival, args[2].sval, args[3].ival);
 }
 
 /* Export the interface function table to EPICS */
