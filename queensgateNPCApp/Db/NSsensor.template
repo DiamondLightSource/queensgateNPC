@@ -23,7 +23,6 @@ substitute "M=$(Q), DESC=$(name), DTYP=asynMotor, ADDR=$(AXIS)"
 substitute "DIR=$(dir=Pos), MRES=$(mres=0.000001), TWV=1"
 substitute "PREC=$(prec=6), EGU=$(egu=um), DHLM=$(dhlm=1000), DLLM=$(dllm=-1000)"
 substitute "INIT="
-#include "basic_asyn_motor.db"
 include "basic_asyn_motor.template"
 
 

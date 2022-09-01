@@ -9,22 +9,12 @@
 #include "include/controller_interface.h"
 #include "adapter/include/dll_adapter.hpp"
 
-//XXX: debug printout
-//#define QGDEBUG 1
-static void nousemacro(...) {};
-#ifdef QGDEBUG 
-    #define aprintf printf
-#else
-    #define aprintf nousemacro
-#endif
-
 //Convert native picometres to micrometres
 #define PM_TO_MICRONS(value)    ((value) * 1.0e-6 )
 #define MICRONS_TO_PM(value)    ((value) * 1.0e6 )
 
 /*
- * command strings (basic for operation; not intended for advanced configuration 
- * nor calibration):
+ * command strings (basic for operation; not intended for advanced configuration nor calibration):
  *  controller.status.get                   Controller status
                     reply: (security,channels,status)=(Queensgate production,3,0x0000)
  *  identity.hardware.part.get              Controller part number
@@ -52,6 +42,8 @@ static void nousemacro(...) {};
                     reply: (value)=(1) 
  *  stage.status.in-position.lpf-confirmed.get <channel>            Stage “in position” state confirmed by LPF algorithm
                     reply: (value)=(1)
+ *  stage.status.in-position.window-filter-confirmed.get <channel>  Stage “in position” state confirmed by window filter algorithm
+                    reply: (value)=(1)
     stage.status.stage-moving.get <channel>                         Stage moving status
                     reply: (value)=(1)      [0 or 1]
     stage.mode.digital-command.get <channel>      Stage control mode (digital means from PC/serial/USB)
@@ -59,43 +51,36 @@ static void nousemacro(...) {};
  */
 
 /* EPICS asyn Commands */
-#define QG_CtrlConnectedCmd "QGATE_CONNECTED"
-#define QG_CtrlStatusCmd    "QGATE_STATUS"
-#define QG_CtrlModelCmd     "QGATE_MODEL"
-#define QG_CtrlFirmwareCmd  "QGATE_FIRMWARE"
-#define QG_CtrlSerialNumCmd "QGATE_SERIALNO"
-#define QG_CtrlMaxStagesCmd   "QGATE_MAXSTAGES"
-#define QG_CtrlMaxAxesCmd   "QGATE_MAXAXES"
-#define QG_CtrlDLLverCmd    "QGATE_DLLVER"
-#define QG_CtrlSecurityCmd  "QGATE_SECURITY"
-#define QG_AxisNameCmd      "QGATE_NAMEAXIS"    //TODO: keep for naming or remove
-#define QG_AxisModelCmd     "QGATE_STAGEMODEL"
-#define QG_AxisConnectedCmd "QGATE_AXISCONN"
-#define QG_AxisModeCmd      "QGATE_AXISMODE"
-#define QG_AxisSetPosCmd    "QGATE_POSITION"
-#define QG_AxisPosCmd       "QGATE_POSITION_RBV"
-#define QG_AxisInPosLPFCmd  "QGATE_INPOSLPF"
+#define QG_CtrlConnectedCmd         "QGATE_CONNECTED"
+#define QG_CtrlStatusCmd            "QGATE_STATUS"
+#define QG_CtrlModelCmd             "QGATE_MODEL"
+#define QG_CtrlFirmwareCmd          "QGATE_FIRMWARE"
+#define QG_CtrlSerialNumCmd         "QGATE_SERIALNO"
+#define QG_CtrlMaxStagesCmd         "QGATE_MAXSTAGES"
+#define QG_CtrlMaxAxesCmd           "QGATE_MAXAXES"
+#define QG_CtrlDLLverCmd            "QGATE_DLLVER"
+#define QG_CtrlSecurityCmd          "QGATE_SECURITY"
+#define QG_AxisNameCmd              "QGATE_NAMEAXIS"
+#define QG_AxisModelCmd             "QGATE_STAGEMODEL"
+#define QG_AxisConnectedCmd         "QGATE_AXISCONN"
+#define QG_AxisModeCmd              "QGATE_AXISMODE"
+#define QG_AxisSetPosCmd            "QGATE_POSITION"
+#define QG_AxisPosCmd               "QGATE_POSITION_RBV"
+#define QG_AxisInPosLPFCmd          "QGATE_INPOSLPF"
+#define QG_AxisInPosUnconfirmedCmd  "QGATE_INPOSU"
+#define QG_AxisInPosWindowCmd       "QGATE_INPOSWIN"
 
 #define MAX_N_REPLIES (20)
 
-typedef std::list<std::string> QGList; //DLL DoCommand Result list
-#include <stdlib.h>
+//DLL's DoCommand Result list
+class QGList : public std::list<std::string> {
+public:
+    QGList() {};
+    std::string find(const int position);
+    std::string print();
+};
 
-//XXX: Queensgate List printout
-std::string findQGList(QGList &qglist, const int position);
-void printQGList(QGList &qglist);
-
-//XXX: timestamp for debug
-#include <sys/time.h>
-char* mytime();
-
-#define TESTQGCMD(a) { \
-    result = qg.DoCommand((a), listresName, listresVal);           \
-    printf("queensgateNPC: '%s' = %d \n", (a), result);             \
-    printQGList(listresName);                                       \
-    printQGList(listresVal);                                        \
-}
-
+//Class for Queensgate controller
 class QgateController : public asynMotorController {
     friend class QgateAxis;
 public:
@@ -129,6 +114,8 @@ protected:
     int QG_AxisMode;
     int QG_AxisPos; 
     int QG_AxisInPosLPF;
+    int QG_AxisInPosUnconfirmed;
+    int QG_AxisInPosWindow;
 
 protected:
     /* Methods for use by the axes */
@@ -143,7 +130,7 @@ private:
     asynUser* serialPortUser;
     DllAdapter qg;  //Queensgate adapter
     /* Config */
-    std::string versionDLL; //XXX: remove this one
+    std::string versionDLL; //XXX: remove this one?
     std::string model;
     std::string serialNum;
     std::string ctrl_firmware;
@@ -161,7 +148,7 @@ protected:
     DeferredMoves deferredMove; //Stores the move commands to be deferred
     bool deferringMode;         //Moves are being deferred
 private:
-    //asynStatus initController(const char* portDevice, const char* libPath);
+    std::string printQGList(QGList &qglist);
     asynStatus initController(const char* libPath);
     asynStatus initSession();
     asynStatus initialChecks();

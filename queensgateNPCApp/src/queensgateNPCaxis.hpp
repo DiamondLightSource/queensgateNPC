@@ -1,37 +1,14 @@
 #ifndef QGATENPCaxis_H_
 #define QGATENPCaxis_H_
 
+#include <stdio.h>
+
 #include <asynMotorController.h>
 #include <asynMotorAxis.h>
 
 // #include "include/controller_interface.h"
 // #include "include/dll_adapter.hpp"
 #include "queensgateNPCcontroller.hpp"
-
-#include <time.h>
-#include <stdio.h>
-
-class myChrono {
-public:
-    myChrono() : startedT(false) {};
-    //starts chrono
-    void start() {
-        time(&startT);
-        startedT = true;
-    }
-    //returns elapsed time in seconds.
-    //Can be called repeatedly
-    double stop() {
-        if (!startedT) {
-            return 0;
-        }
-        time(&endT);
-        return difftime(endT,startT);
-    }
-private:
-    time_t startT,endT;
-    bool startedT;
-};
 
 class QgateAxis : public asynMotorAxis 
 {
@@ -57,27 +34,25 @@ private:
     QgateController& ctrler;
     DllAdapter& qg;  //Queensgate adapter
     unsigned int axisNum;    //Axis number for DLL [1..n]
-                    //Note that it differs from asynMotorAxis::axisNo_ being the axis index [0..n]
+                        //Note that it differs from asynMotorAxis::axisNo_ being the axis index [0..n]
     std::string axis_name;  //name of the stage
     std::string axis_model; //(Reported) model of the stage
     bool isSensor;          //Configured as sensor (no motion) or active stage
-    int moveTimeout;        //time out for giving up position reached, in seconds
-    myChrono chronox;
-
-    bool initialMoving;
-    bool connected;
+    //Status attributes
+    bool initialStatus;     //Initial status, before first polling
+    bool connected;         //Axis connected status
     bool forceStop;         //Stop status was forced
     unsigned int _pollCounter;  //Iteration counter for slow polling
-    // bool axis_inPos;        //in position (LPF-confirmed)
-    //TODO: configure In-position for unconfirmed/LPF/Window
-    //TODO: separate PVs for unconfirmed/LPF/Window In-position 
+    
 private:
     bool initAxis();
     bool getStatusConnected();
     bool getStatusMoving(bool &moving);
     bool getAxisMode();
     bool getPosition();
-    bool getInLPFPosition(int &inPos);
+    bool getInPositionLPF();
+    bool getInPositionUnconfirmed();
+    bool getInPositionWindow();
 };
 
 #endif //ONCE

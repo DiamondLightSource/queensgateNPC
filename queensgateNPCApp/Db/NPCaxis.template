@@ -24,19 +24,39 @@ substitute "M=$(Q), DESC=$(name), DTYP=asynMotor, ADDR=$(AXIS)"
 substitute "DIR=$(dir=Pos), MRES=$(mres=0.000001), TWV=1"
 substitute "PREC=$(prec=6), EGU=$(egu=um), DHLM=$(dhlm=1000), DLLM=$(dllm=-1000)"
 substitute "INIT="
-#include "basic_asyn_motor.db"
 include "basic_asyn_motor.template"
 
-
-# TODO: to be removed??
-record(bi, "$(P)$(Q):INPOSIT")
+record(bi, "$(P)$(Q):INPOSLPF")
 {
     #stage in position, after a Low-Pass-Filter check
     field(DESC, "in position LPF")
     field(SCAN, "I/O Intr")
-    #field(SCAN, ".5 second")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSLPF")
+    field(PINI, "1")
+    field(ZNAM, "out position")
+    field(ONAM, "Confirmed")
+}
+
+record(bi, "$(P)$(Q):INPOSU")
+{
+    #stage in position, unconfirmed
+    field(DESC, "in position unconfirmed")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSU")
+    field(PINI, "1")
+    field(ZNAM, "out position")
+    field(ONAM, "Unconfirmed position")
+}
+
+record(bi, "$(P)$(Q):INPOSWIN")
+{
+    #stage in position, unconfirmed
+    field(DESC, "in position Window")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSWIN")
     field(PINI, "1")
     field(ZNAM, "out position")
     field(ONAM, "Confirmed")
