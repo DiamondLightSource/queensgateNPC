@@ -1,6 +1,7 @@
 #ifndef QGATENPCcontroller_H_
 #define QGATENPCcontroller_H_
 
+//#include <asynPortDriver.h>
 #include <asynMotorController.h>
 #include <asynMotorAxis.h>
 #include <TakeLock.h>
@@ -66,8 +67,9 @@
 #define QG_AxisModeCmd              "QGATE_AXISMODE"
 #define QG_AxisSetPosCmd            "QGATE_POSITION"
 #define QG_AxisPosCmd               "QGATE_POSITION_RBV"
-#define QG_AxisInPosLPFCmd          "QGATE_INPOSLPF"
+#define QG_AxisMovingCmd            "QGATE_AXISMOVING"
 #define QG_AxisInPosUnconfirmedCmd  "QGATE_INPOSU"
+#define QG_AxisInPosLPFCmd          "QGATE_INPOSLPF"
 #define QG_AxisInPosWindowCmd       "QGATE_INPOSWIN"
 
 #define MAX_N_REPLIES (20)
@@ -113,8 +115,9 @@ protected:
     int QG_AxisConnected;
     int QG_AxisMode;
     int QG_AxisPos; 
-    int QG_AxisInPosLPF;
+    int QG_AxisMoving;
     int QG_AxisInPosUnconfirmed;
+    int QG_AxisInPosLPF;
     int QG_AxisInPosWindow;
 
 protected:
@@ -130,7 +133,7 @@ private:
     asynUser* serialPortUser;
     DllAdapter qg;  //Queensgate adapter
     /* Config */
-    std::string versionDLL; //XXX: remove this one?
+    std::string versionDLL;
     std::string model;
     std::string serialNum;
     std::string ctrl_firmware;

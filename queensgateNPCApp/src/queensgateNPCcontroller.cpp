@@ -94,8 +94,9 @@ QgateController::QgateController(const char *portName,
     createParam(QG_AxisConnectedCmd,    asynParamInt32,     &QG_AxisConnected);
     createParam(QG_AxisModeCmd,         asynParamInt32,     &QG_AxisMode);
     createParam(QG_AxisPosCmd,          asynParamFloat64,   &QG_AxisPos);
-    createParam(QG_AxisInPosLPFCmd,     asynParamInt32,     &QG_AxisInPosLPF);
+    createParam(QG_AxisMovingCmd,       asynParamInt32,     &QG_AxisMoving);
     createParam(QG_AxisInPosUnconfirmedCmd, asynParamInt32,    &QG_AxisInPosUnconfirmed);
+    createParam(QG_AxisInPosLPFCmd,     asynParamInt32,     &QG_AxisInPosLPF);
     createParam(QG_AxisInPosWindowCmd,  asynParamInt32,     &QG_AxisInPosWindow);
 
     bool initialStatus = true;  //Assume controller would be initialised
@@ -147,7 +148,7 @@ asynStatus QgateController::initController(const char* libPath) {
     //Init DLL: requires the name and path to the controller_interfaceXX.so file
     result = qg.Init(libPath);
     if ( result != DLL_ADAPTER_STATUS_SUCCESS ) {
-        printf("queensgateNPC: FATAL ERROR: DLL file not found!\n");
+        printf("queensgateNPC: FATAL ERROR! not found or incorrect DLL file: %s\n", libPath);
         return asynError;
     }
     return asynSuccess;
@@ -171,13 +172,14 @@ asynStatus QgateController::initSession() {
     /* Get non-mutable information */
     qg.GetDllVersion(dllVersionMajor, dllVersionMinor, dllVersionBuild);
     if(dllVersionMajor<0) { 
-        printf("No DLL version function available!\n"); 
+        printf("queensgateNPC: No DLL version function available!\n"); 
         }
     else {
         char dll[100];
         snprintf(dll, 100, "%d.%d.%d", dllVersionMajor, dllVersionMinor, dllVersionBuild);
         setStringParam(QG_CtrlDLLver, dll);
         asynPrint(pasynUserSelf, ASYN_TRACEIO_DEVICE, "queensgateNPC: Initialising SDK %s\n", dll);
+        printf("%s: Initialising SDK %s\n",driverName, dll);
     }
     return asynSuccess;
 }

@@ -13,17 +13,26 @@
 class QgateAxis : public asynMotorAxis 
 {
 public:
-    QgateAxis(QgateController &controller,
-                unsigned int axisNumber,
-                const char *axisName,
-                unsigned char axisType=AXISTYPE_STAGE
-                );
-    virtual ~QgateAxis();
-public:
+    enum AXISMODE {
+        AXISMODE_NATIVE = 0,    //moving when not in position and not HV saturated
+        AXISMODE_UNCONFIRMED = 1,
+        AXISMODE_WINDOW = 2,    //In position by margin
+        AXISMODE_LPF = 3,       //Low-pass filter (not oscillating)
+        AXISMODE_BOTH = 4       //Confirmed by both Window and Low-pass filter
+    };
     enum AXISTYPE {
         AXISTYPE_STAGE = 0,
         AXISTYPE_SENSOR = 1
     };
+public:
+    QgateAxis(QgateController &controller,
+                unsigned int axisNumber,
+                const char *axisName,
+                unsigned int axisMode=AXISMODE_NATIVE,
+                unsigned int axisType=AXISTYPE_STAGE
+                );
+    virtual ~QgateAxis();
+public:
     // Overridden from asynMotorAxis
     virtual asynStatus poll(bool *moving);
     virtual asynStatus move(double position, int relative,
@@ -37,6 +46,7 @@ private:
                         //Note that it differs from asynMotorAxis::axisNo_ being the axis index [0..n]
     std::string axis_name;  //name of the stage
     std::string axis_model; //(Reported) model of the stage
+    unsigned int axis_mode; //In-position mode to be used
     bool isSensor;          //Configured as sensor (no motion) or active stage
     //Status attributes
     bool initialStatus;     //Initial status, before first polling
@@ -50,9 +60,7 @@ private:
     bool getStatusMoving(bool &moving);
     bool getAxisMode();
     bool getPosition();
-    bool getInPositionLPF();
-    bool getInPositionUnconfirmed();
-    bool getInPositionWindow();
+    bool updateAxisPV(std::string sCmd, int indexPV);
 };
 
 #endif //ONCE

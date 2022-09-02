@@ -45,8 +45,14 @@ asynStatus qgateControllerConfig(const char* ctrlName,
  * param[in] ctlrName Asyn port name of the controller
  * param[in] axisNum The number of this axis
  * param[in] axisNum Name assigned to this axis
+ * param[in] axisType Type of stage attached: motion stage or sensor
+ * param[in] axisMode Mode or confirming when the stage is in position: Native, Unconfirmed, Window-confirmed, LPF-confirmed, Window&LPF
  */
-asynStatus qgateAxisConfig(const char* ctrlName, unsigned int axisNum, const char* axisName, unsigned char axisType=0) {
+asynStatus qgateAxisConfig(const char* ctrlName, 
+                            unsigned int axisNum, 
+                            const char* axisName, 
+                            unsigned int axisMode=QgateAxis::AXISMODE_NATIVE,
+                            unsigned int axisType=QgateAxis::AXISTYPE_STAGE) {
     asynStatus result = asynSuccess;
 
     //XXX:
@@ -54,21 +60,15 @@ asynStatus qgateAxisConfig(const char* ctrlName, unsigned int axisNum, const cha
 
     //Find controller
     QgateController* ctrl = (QgateController*)findAsynPortDriver(ctrlName);
-    if(ctrl == NULL)
-    {
+    if(ctrl == NULL) {
         printf("queensgateNPC: Axis %s could not find NPC controller object '%s'\n", 
                 axisName, ctrlName);
         result = asynError;
-    }
-    else
-    {
-        //XXX:
-        // printf("For axis %d found one!: %p\n", axisNum, ctrl);
-
-        new QgateAxis(*ctrl, axisNum, axisName, axisType);
+    } else {
+        new QgateAxis(*ctrl, axisNum, axisName, axisMode, axisType);
 
         //TODO: convert these printfs into asynPrint
-        printf("queensgateNPC: %s:Axis %d '%s' %d created\n", ctrlName, axisNum, axisName, axisType);
+        //printf("queensgateNPC: %s:Axis %d '%s' %d created\n", ctrlName, axisNum, axisName, axisType);
     }
     return result;
 }
@@ -116,12 +116,14 @@ static void qgateCtrlConfig_CallFunc(const iocshArgBuf *args) {
 static const iocshArg qgateAxisConfig_Arg0 = { "controller port name", iocshArgString };
 static const iocshArg qgateAxisConfig_Arg1 = { "axis index number", iocshArgInt };
 static const iocshArg qgateAxisConfig_Arg2 = { "axis name", iocshArgString };
-static const iocshArg qgateAxisConfig_Arg3 = { "axis type", iocshArgInt };
+static const iocshArg qgateAxisConfig_Arg3 = { "axis position mode", iocshArgInt };
+static const iocshArg qgateAxisConfig_Arg4 = { "axis type", iocshArgInt };
 static const iocshArg * const qgateAxisConfig_Args[] = { &qgateAxisConfig_Arg0, 
                                                         &qgateAxisConfig_Arg1, 
                                                         &qgateAxisConfig_Arg2,
-                                                        &qgateAxisConfig_Arg3 };
-static const iocshFuncDef qgateAxisConfig_FuncDef = { "qgateAxisConfig", 4, qgateAxisConfig_Args };
+                                                        &qgateAxisConfig_Arg3,
+                                                        &qgateAxisConfig_Arg4 };
+static const iocshFuncDef qgateAxisConfig_FuncDef = { "qgateAxisConfig", 5, qgateAxisConfig_Args };
 
 static void qgateAxisConfig_CallFunc(const iocshArgBuf *args) {
     // XXX: print parameters
@@ -136,7 +138,8 @@ static void qgateAxisConfig_CallFunc(const iocshArgBuf *args) {
     //     }
     // }
             
-    qgateAxisConfig(args[0].sval, args[1].ival, args[2].sval, args[3].ival);
+    qgateAxisConfig(args[0].sval, args[1].ival, args[2].sval, 
+                        args[3].ival, args[4].ival);
 }
 
 /* Export the interface function table to EPICS */

@@ -41,7 +41,6 @@ record(stringin, "$(P)$(Q):STAGEMODEL")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_STAGEMODEL")
 }
 
-#XXX: to be removed
 record(bi, "$(P)$(Q):CONNECTED")
 {
     field(DESC, "Axis connection status")

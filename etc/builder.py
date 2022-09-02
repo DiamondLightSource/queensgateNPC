@@ -1,7 +1,7 @@
 from iocbuilder import AutoSubstitution, Device
 from iocbuilder.modules.motor import MotorLib
 from iocbuilder.modules.asyn import Asyn, AsynIP, AsynPort
-from iocbuilder.arginfo import makeArgInfo, Simple, Ident
+from iocbuilder.arginfo import makeArgInfo, Simple, Ident, Choice, Enum
 import os.path
 
 __all__ = ['NPCcontroller', 'NPCaxis', 'NScontroller', 'NSsensor']
@@ -71,19 +71,21 @@ class NPCcontroller(Device):
 
 class NPCaxis(Device):
     '''Axis (stage) in NPC-series Queensgate NanoPositioner controller'''
-    def __init__(self, name, controller, P, Q, axis, timeout=5, DIR="Pos", MRES=.000001, DHLM=10, DLLM=-10, PREC=6, EGU="um"):
+    def __init__(self, name, controller, P, Q, axis, axisMode=3, timeout=5, DIR="Pos", MRES=.000001, DHLM=10, DLLM=-10, PREC=6, EGU="um"):
         self.__dict__.update(locals())
         #TODO: check axis num [1..n]
         self.axisIndex = axis - 1
         self.template = _QueensgateNPCaxisPars(PORT=controller.name, P=P, Q=Q, AXIS=self.axisIndex, TIMEOUT=timeout, name=name, 
                         dir=DIR, mres=MRES, dhlm=DHLM, dllm=DLLM, prec=PREC, egu=EGU)
         self.__super.__init__()
+    axisModeChoice = ["Native","Unconfirmed","Window-confirmed","LPF-Confirmed","Window-and-LPF-confirmed"]
     ArgInfo = makeArgInfo(__init__,
                           name=Simple("Axis name", str),
                           controller = Ident("controller port name", NPCcontroller.__name__),
                           P=Simple("Device Prefix", str),
                           Q=Simple("Device Suffix", str),
                           axis=Simple("Stage number connected to the controller [1..n]", int),
+                          axisMode=Choice("Moving indication mode",range(0, 5), axisModeChoice),
                           timeout=Simple("Comms timeout", str),
                           DIR=Simple("Motor Direction (Pos/Neg)", str),
                           MRES=Simple("Motion resolution (automatically applies same to ERES and RRES)", float), 
@@ -94,7 +96,7 @@ class NPCaxis(Device):
                           )
 
     def Initialise(self):
-        print('qgateAxisConfig( "{controller.name}", "{axis}", "{name}" )'.format(**self.__dict__))
+        print('qgateAxisConfig( "{controller.name}", "{axis}", "{name}", {axisMode} )'.format(**self.__dict__))
 
 class NScontroller(Device):
     '''NS-series Queensgate Serial NanoSensor controller'''
@@ -143,18 +145,20 @@ class NScontroller(Device):
         
 class NSsensor(Device):
     '''Channel (stage) in Queensgate NS-series NanoSensor controller'''
-    def __init__(self, name, controller, P, Q, axis, timeout=5, DIR="Pos", MRES=.000001, DHLM=1000, DLLM=-1000, PREC=6, EGU="um"):
+    def __init__(self, name, controller, P, Q, axis, axisMode=3, timeout=5, DIR="Pos", MRES=.000001, DHLM=1000, DLLM=-1000, PREC=6, EGU="um"):
         self.__dict__.update(locals())
         self.axisIndex = axis - 1
         self.template = _QueensgateNSsensorPars(PORT=controller.name, P=P, Q=Q, AXIS=self.axisIndex, TIMEOUT=timeout, name=name, 
                         dir=DIR, mres=MRES, dhlm=DHLM, dllm=DLLM, prec=PREC, egu=EGU)
         self.__super.__init__()
+    axisModeChoice = ["Native","Unconfirmed","Window-confirmed","LPF-Confirmed","Window-and-LPF-confirmed"]
     ArgInfo = makeArgInfo(__init__,
                           name=Simple("Axis name", str),
                           controller = Ident("controller port name", NPCcontroller.__name__),
                           P=Simple("Device Prefix", str),
                           Q=Simple("Device Suffix", str),
                           axis=Simple("Stage number connected to the controller [1..n]", int),
+                          axisMode=Choice("Moving indication mode",range(0, 5), axisModeChoice),
                           timeout=Simple("Comms timeout", str),
                           DIR=Simple("Motor Direction (Pos/Neg)", str),
                           MRES=Simple("Motion resolution (automatically applies same to ERES and RRES)", float), 
@@ -166,6 +170,6 @@ class NSsensor(Device):
 
     def Initialise(self):
         # Note that axis type 1 is a sensor
-        print('qgateAxisConfig( "{controller.name}", "{axis}", "{name}", 1 )'.format(**self.__dict__))
+        print('qgateAxisConfig( "{controller.name}", "{axis}", "{name}", {axisMode}, 1 )'.format(**self.__dict__))
         
 

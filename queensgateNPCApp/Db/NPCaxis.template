@@ -14,7 +14,6 @@
 # % macro, egu, engineering units
 
 # This associates the template with an edm screen
-#  gui, $(name), edm, queensgateNPC.edl, P=$(P), Q=$(Q)
 # % gui, $(name), edm, motor.edl, motor=$(P)$(Q)
 # % gui, $(name), edmembed, motor-embed-small.edl, motor=$(P)$(Q),filename=motor.edl,box-label=$(name)
 
@@ -26,16 +25,17 @@ substitute "PREC=$(prec=6), EGU=$(egu=um), DHLM=$(dhlm=1000), DLLM=$(dllm=-1000)
 substitute "INIT="
 include "basic_asyn_motor.template"
 
-record(bi, "$(P)$(Q):INPOSLPF")
+
+record(bi, "$(P)$(Q):MOVING")
 {
-    #stage in position, after a Low-Pass-Filter check
-    field(DESC, "in position LPF")
+    #stage is moving, as reported natively from controller
+    field(DESC, "Stage moving status")
     field(SCAN, "I/O Intr")
     field(DTYP, "asynInt32")
-    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSLPF")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_AXISMOVING")
     field(PINI, "1")
-    field(ZNAM, "out position")
-    field(ONAM, "Confirmed")
+    field(ZNAM, "Idle")
+    field(ONAM, "Moving")
 }
 
 record(bi, "$(P)$(Q):INPOSU")
@@ -46,8 +46,20 @@ record(bi, "$(P)$(Q):INPOSU")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSU")
     field(PINI, "1")
-    field(ZNAM, "out position")
+    field(ZNAM, "Out position")
     field(ONAM, "Unconfirmed position")
+}
+
+record(bi, "$(P)$(Q):INPOSLPF")
+{
+    #stage in position, after a Low-Pass-Filter check
+    field(DESC, "in position LPF")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSLPF")
+    field(PINI, "1")
+    field(ZNAM, "Out position")
+    field(ONAM, "Confirmed")
 }
 
 record(bi, "$(P)$(Q):INPOSWIN")
@@ -58,7 +70,7 @@ record(bi, "$(P)$(Q):INPOSWIN")
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_INPOSWIN")
     field(PINI, "1")
-    field(ZNAM, "out position")
+    field(ZNAM, "Out position")
     field(ONAM, "Confirmed")
 }
 
@@ -77,7 +89,6 @@ record(stringin, "$(P)$(Q):STAGEMODEL")
     field(INP,  "@asyn($(PORT),$(AXIS),$(TIMEOUT))QGATE_STAGEMODEL")
 }
 
-#XXX: to be removed
 record(bi, "$(P)$(Q):CONNECTED")
 {
     field(DESC, "Axis connection status")

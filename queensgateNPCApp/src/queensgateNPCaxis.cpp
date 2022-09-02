@@ -1,12 +1,13 @@
-#include <sstream>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
+#include <sstream>
 
+// #include <asynPortDriver.h>
 #include <epicsExport.h>
 #include <epicsTime.h>
 #include <epicsThread.h>
-#include <epicsEvent.h>
-#include <epicsMutex.h>
+//#include <epicsEvent.h>
+//#include <epicsMutex.h>
 #include <iocsh.h>
 #include <asynOctetSyncIO.h>
 
@@ -20,12 +21,14 @@
 QgateAxis::QgateAxis(QgateController &controller,
                     unsigned int axisNumber,
                     const char *axisName,
-                    unsigned char axisType) :
+                    unsigned int axisMode,
+                    unsigned int axisType) :
         asynMotorAxis(&controller, axisNumber-1) //axis Num [1..n] converted to Index [0..n]
         , ctrler(controller)
         , qg(controller.getAdapter())
         , axisNum(axisNumber)
         , axis_name(axisName)
+        , axis_mode(axisMode)
         , isSensor(axisType == AXISTYPE_SENSOR)
         , initialStatus(false)
         , connected(false)
@@ -33,12 +36,10 @@ QgateAxis::QgateAxis(QgateController &controller,
 {
     asynPrint(pasynUser_, ASYN_TRACE_FLOW, "creating QgateAxis %d '%s' %d\n", axisNumber, axisName, axisType);
 
-    //XXX:    
-    //setIntegerParam(ctrler.motorStatus_, 0);
-    //setIntegerParam(ctrler.motorStatusCommsError_, 1);
-    //setIntegerParam(ctrler.motorPowerStatus_, 0);
-    setIntegerParam(ctrler.motorPowerOnDelay_, 0);
-    setIntegerParam(ctrler.motorPowerOffDelay_, 0);
+    setIntegerParam(ctrler.motorStatus_, 0);
+    setIntegerParam(ctrler.motorStatusCommsError_, 1);
+    setDoubleParam(ctrler.motorPowerOnDelay_, 0.0);
+    setDoubleParam(ctrler.motorPowerOffDelay_, 0.0);
     setIntegerParam(ctrler.motorPowerAutoOnOff_, 0);
 
 }
@@ -49,10 +50,12 @@ bool QgateAxis::initAxis() {
     std::string value;
     bool result = false;
     
+    // setIntegerParam(ctrler.motorStatus_, 0);
+    // setIntegerParam(ctrler.motorStatusCommsError_, 1);
+    // setIntegerParam(ctrler.motorStatusFollowingError_, 0);
     //EPICS is not in charge of the closed loop operation, it is the Queensgate controller,
     // but nevertheless it is defined a closed loop.
     setClosedLoop(true);
-    setIntegerParam(ctrler.motorStatusFollowingError_, 0);
     ctrler.deferredMove[axisNo_].clear();
     result = getStatusConnected();
     if(result) {
@@ -75,9 +78,6 @@ asynStatus QgateAxis::poll(bool *moving) {
     if(initialStatus) {
         initialStatus = false;
         *moving = false;
-        // setIntegerParam(ctrler.motorPowerOnDelay_, 0);
-        // setIntegerParam(ctrler.motorPowerOffDelay_, 0);
-        // setIntegerParam(ctrler.motorPowerAutoOnOff_, 0);
         return asynSuccess;   //First run of the poll
     }
 
@@ -89,11 +89,11 @@ asynStatus QgateAxis::poll(bool *moving) {
         result |= getStatusConnected();
         if(result) {
             result |= getPosition();    
-            result |= getStatusMoving(*moving);
         }
         //slow poll
         if (_pollCounter++ % SLOW_POLL_FREQ_CONST == 0) {
             result |= getAxisMode();
+            result |= getStatusMoving(*moving);
         }
     } else {
         //Axis reconnection poll (slow)
@@ -110,7 +110,7 @@ asynStatus QgateAxis::poll(bool *moving) {
         if(wasconnected) {
             //Just lost connection
             *moving = false;    
-            forceStop = false;
+            forceStop = false;  //Cancel any previous stop request
         } else {
             initAxis();         //Been re-connected
         }
@@ -132,9 +132,9 @@ bool QgateAxis::getStatusConnected() {
         //Update axis status on change
         connected = result;
         //Update status bits
-        ctrler.setIntegerParam(axisNo_, ctrler.motorStatusProblem_, !connected);
-        ctrler.setIntegerParam(axisNo_, ctrler.motorStatusCommsError_, !connected);
-        setIntegerParam(ctrler.motorStatus_, !connected);
+        setIntegerParam(ctrler.motorStatusProblem_, !connected);
+        setIntegerParam(ctrler.motorStatusCommsError_, !connected);
+        // setIntegerParam(ctrler.motorStatus_, !connected);
         setIntegerParam(ctrler.motorStatusProblem_, !connected);
         setIntegerParam(ctrler.motorStatusCommsError_, !connected);
         //Update status of related PVs
@@ -152,42 +152,18 @@ bool QgateAxis::getAxisMode() {
     return false;
 }
 
-/** Confirm the stage reached a low-pass filter confirmed position, and update status.
-  * Returns false when comms or command failed  */
-bool QgateAxis::getInPositionLPF() {
+/** Runs a get command and updates its related PV.
+ * \param[in] sCmd Controller's command string
+ * \param[in] indexPV Index of the PV to update
+ * Returns false if communication fails
+ */
+bool QgateAxis::updateAxisPV(std::string sCmd, int indexPV) {
     bool result = false;   //Assume feedback from controller failed
-    std::string value;
-    if(ctrler.getCmd("stage.status.in-position.lpf-confirmed.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
-        int inPos = atoi(value.c_str());
+    std::string sValue;
+    if(ctrler.getCmd(sCmd, axisNum, sValue) == DLL_ADAPTER_STATUS_SUCCESS) {
+        int value = atoi(sValue.c_str());
         result = true;      //success getting position status
-        forceStop = false;  //Already in position: no need to force stop
-        setIntegerParam(ctrler.QG_AxisInPosLPF, inPos);
-    }
-    return result;   //failed/success
-}
-
-/** Confirm the stage reached position, and update status.
-  * Returns false when comms or command failed  */
-bool QgateAxis::getInPositionUnconfirmed() {
-    bool result = false;   //Assume feedback from controller failed
-    std::string value;
-    if(ctrler.getCmd("stage.status.in-position.unconfirmed.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
-        int inPos = atoi(value.c_str());
-        result = true;      //success getting position status
-        setIntegerParam(ctrler.QG_AxisInPosUnconfirmed, inPos);
-    }
-    return result;   //failed/success
-}
-
-/** Confirm the stage reached a window filter confirmed position, and update status.
-  * Returns false when comms or command failed  */
-bool QgateAxis::getInPositionWindow() {
-    bool result = false;   //Assume feedback from controller failed
-    std::string value;
-    if(ctrler.getCmd("stage.status.in-position.window-filter-confirmed.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
-        int inPos = atoi(value.c_str());
-        result = true;      //success getting position status
-        setIntegerParam(ctrler.QG_AxisInPosWindow, inPos);
+        setIntegerParam(indexPV, value);
     }
     return result;   //failed/success
 }
@@ -196,19 +172,51 @@ bool QgateAxis::getInPositionWindow() {
   * Returns false when comms or command failed  */
 bool QgateAxis::getStatusMoving(bool &moving) {
     bool result = false;    //Assume feedback from controller failed
-
+    epicsInt32 inPos = 0;   //Assume not moving
+    
     if(isSensor) {
         moving = false;     //Sensor never have indication of being moved
         result = true;      //Assume success comms
     } else {
-        std::string value;
-        if(ctrler.getCmd("stage.status.stage-moving.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
-            int isMoving = atoi(value.c_str());
-            moving = isMoving;  //int to bool conversion
-            if(!moving) {
-                result = getInPositionUnconfirmed();   
-                result |= getInPositionLPF();
-                result |= getInPositionWindow();
+        //Update moving/in-position status
+        result = updateAxisPV("stage.status.stage-moving.get", ctrler.QG_AxisMoving);
+        result |= updateAxisPV("stage.status.in-position.unconfirmed.get", ctrler.QG_AxisInPosUnconfirmed);
+        result |= updateAxisPV("stage.status.in-position.lpf-confirmed.get", ctrler.QG_AxisInPosLPF);
+        result |= updateAxisPV("stage.status.in-position.window-filter-confirmed.get", ctrler.QG_AxisInPosWindow);
+
+        ctrler.getIntegerParam(ctrler.QG_AxisInPosLPF, &inPos);
+        if(inPos){
+            forceStop = false;  //Already in position: no need to force stop
+        }
+
+        if(!result) {
+            moving = false;     //comms failure
+        } else {
+            //Set moving indication
+            switch(axis_mode) {
+                case AXISMODE_NATIVE:
+                    ctrler.getIntegerParam(ctrler.QG_AxisMoving, &inPos);
+                    moving = inPos;     //note inPos is taken as not inverted here
+                    break;
+                case AXISMODE_UNCONFIRMED:
+                    ctrler.getIntegerParam(ctrler.QG_AxisInPosUnconfirmed, &inPos);
+                    moving = !inPos;
+                    break;
+                case AXISMODE_WINDOW:
+                    ctrler.getIntegerParam(ctrler.QG_AxisInPosWindow, &inPos);
+                    moving = !inPos;
+                    break;
+                case AXISMODE_LPF:
+                    ctrler.getIntegerParam(ctrler.QG_AxisInPosLPF, &inPos);
+                    moving = !inPos;
+                    break;
+                case AXISMODE_BOTH:
+                    int inPos2;
+                    ctrler.getIntegerParam(ctrler.QG_AxisInPosWindow, &inPos2);
+                    ctrler.getIntegerParam(ctrler.QG_AxisInPosLPF, &inPos);
+                    inPos &= inPos2;
+                    moving = !inPos;
+                    break;
             }
         }
     }
@@ -262,56 +270,30 @@ asynStatus QgateAxis::move(double position, int relative,
 
     //Note: NPC controller have pre-configured movement parameters (e.g. velocity, accel)
     if(ctrler.moveCmd("stage.position.absolute-command.set", axisNum, position) != DLL_ADAPTER_STATUS_SUCCESS) {
-        //TODO: move this to centralized status?
         connected = false;
         ctrler.setIntegerParam(axisNo_, ctrler.motorStatusCommsError_, !connected);
         
         return asynError;
     } else {
+        //Start of movement: not in position
+        setIntegerParam(ctrler.motorStatusDone_, 0);
+        setIntegerParam(ctrler.QG_AxisInPosUnconfirmed, 0);
+        setIntegerParam(ctrler.QG_AxisInPosWindow, 0);
+        setIntegerParam(ctrler.QG_AxisInPosLPF, 0);
         forceStop = false;  //Cancel any previous stop request
     }
 
-    if(relative) {
-        //TODO: relative move
-    //     ctrler.moveCmd("stage.position.command.set", physicalAxis(), position);
-    //     //ctrler.doMove(physicalAxis(), position);
+    //TODO: implement and test relative move
+    // if(relative) {
+    //     if(ctrler.moveCmd("stage.position.command.set", axisNum, position) != DLL_ADAPTER_STATUS_SUCCESS) {
+    //     connected = false;
+    //     ctrler.setIntegerParam(axisNo_, ctrler.motorStatusCommsError_, !connected);
+    //     return asynError;
     // } else {
-    //     ctrler.moveCmd("stage.position.absolute-command.set", physicalAxis(), position);
+    //     //setIntegerParam(ctrler.motorStatusDirection_, (int)position > curPosition);
+    //     setIntegerParam(ctrler.motorStatusDirection_, position > 0);
+    //     setIntegerParam(ctrler.motorStatusDone_, 0);
     // }
-    // setIntegerParam(ctrler.motorStatusDone_, 0);
-    // setIntegerParam(ctrler.motorStatusDirection_, (int)position > curPosition);
-
-    // Wait for move to complete. 
-    // std::string sstat; 
-    // asynStatus status = asynError;
-    // int curStatus;
-    // bool moving = true;
-    // bool inPos;
-    // do {
-    //     TakeLock again(freeLock);
-    //     inPos = getStatusMoving();
-    // //     result = ctrler.getCmd("stage.status.in-position.lpf-confirmed.get", 
-    // //                             physicalAxis(), sstat);
-    // //     if(result != DLL_ADAPTER_STATUS_SUCCESS)
-    // //     {
-    // //         printf("QgateNPC: Error checking moving status\n");
-    // //         moving = false;
-    // //     } else {
-    // //         curStatus = atoi(sstat.c_str());
-    // //         moving = !(curStatus == 3 || curStatus == 0);
-    // //         if (!moving) {
-    // //             status = asynSuccess;
-
-    // //         }
-    // //         //TODO: delay here to avoid hammering
-    // //         //TODO: timeout of full move
-    // //     }
-    // } while(!inPos);
-
-    // // Do a poll now
-    // // pollStatus(freeLock);
-    // return status;
-    }
     return asynSuccess;
 }
 
