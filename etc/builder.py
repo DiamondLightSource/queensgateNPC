@@ -71,7 +71,7 @@ class NPCcontroller(Device):
 
 class NPCaxis(Device):
     '''Axis (stage) in NPC-series Queensgate NanoPositioner controller'''
-    def __init__(self, name, controller, P, Q, axis, axisMode=3, timeout=5, DIR="Pos", MRES=.000001, DHLM=10, DLLM=-10, PREC=6, EGU="um"):
+    def __init__(self, name, controller, P, Q, axis, axisMode=0, timeout=5, DIR="Pos", MRES=.000001, DHLM=10, DLLM=-10, PREC=6, EGU="um"):
         self.__dict__.update(locals())
         #TODO: check axis num [1..n]
         self.axisIndex = axis - 1
