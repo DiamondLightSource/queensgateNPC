@@ -122,13 +122,11 @@ protected:
 
 protected:
     /* Methods for use by the axes */
-    bool isAxisPresent(int axisNum);
     DllAdapter& getAdapter();
+    bool isAxisPresent(int axisNum);
     DllAdapterStatus moveCmd(std::string cmd, int axisNum, double value);
     DllAdapterStatus getCmd(std::string cmd, int axisNum, std::string &value, int valueID=0);
 
-    /* Parameter notification methods */
-    
 private:
     asynUser* serialPortUser;
     DllAdapter qg;  //Queensgate adapter
@@ -141,7 +139,6 @@ private:
     int numAxes;    //Configured amount of axes
     int maxAxes;    //Max amount of axes supported by the connected controller
     std::string portDevice;
-    void printdefmoves();
 protected:
     /* Status */
     std::string nameCtrl;
@@ -151,10 +148,10 @@ protected:
     DeferredMoves deferredMove; //Stores the move commands to be deferred
     bool deferringMode;         //Moves are being deferred
 private:
-    std::string printQGList(QGList &qglist);
     asynStatus initController(const char* libPath);
     asynStatus initSession();
     asynStatus initialChecks();
+    void printdefmoves();
 };
 
 #endif //QGATENPCcontroller_H_

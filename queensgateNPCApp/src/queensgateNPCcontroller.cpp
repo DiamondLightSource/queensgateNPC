@@ -202,7 +202,7 @@ asynStatus QgateController::initialChecks() {
     if(securityLevel.compare("Queensgate user")!=0) {
         //TODO: set security level back to user -- this goes here or somewhere else?
         result = qg.DoCommand("controller.security.user.set 0xDEC0DED", listresName, listresVal);
-        //TODO: check outcome
+        //TODO: check outcome changed
         getCmd("controller.security.user.get", 0, securityLevel);
     }
 
@@ -388,7 +388,7 @@ DllAdapterStatus QgateController::getCmd(std::string cmd, int axisNum, std::stri
         std::ostringstream errorStr;
         qg.GetErrorText(errorStr, result);
         asynPrint(pasynUserSelf, ASYN_TRACE_ERROR, "Stage %s-%d Failed request %d: %s --> %s\n", nameCtrl.c_str(), axisNum, result, errorStr.str().c_str(), stageCmd.str().c_str());
-        value.clear();  //empty return string
+        value.clear();  //return empty string
     }
     return result;
 }

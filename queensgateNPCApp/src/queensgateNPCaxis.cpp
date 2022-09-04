@@ -312,8 +312,7 @@ asynStatus QgateAxis::stop(double acceleration) {
         return asynSuccess;
     }
 
-    //Re-command the axis to be in the current position
-    // Start the stop procedure
+    // Start the stop procedure: Re-command the axis to move to the current position
 	TakeLock takeLock(&ctrler, /*alreadyTaken=*/true);
     FreeLock freeLock(takeLock);
     forceStop = true;
