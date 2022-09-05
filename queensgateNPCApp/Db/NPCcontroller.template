@@ -4,7 +4,7 @@
 # % macro, name, Controller GUI name
 # % macro, P, PV prefix for Queensgate controller
 # % macro, Q, PV suffix
-# % macro, PORT, port to use -- as in /dev/tty or /dev/usb
+# % macro, PORT, Comms port to use -- as in IP address for Ethernet or /dev/ttyX for serial
 # % macro, TIMEOUT, Asyn timeout
 
 # This associates the template with an edm screen
@@ -14,7 +14,6 @@ record(stringin, "$(P)$(Q):STATUS")
 {
     field(DESC, "Controller status")
     field(SCAN, "I/O Intr")
-    # field(SCAN, "1 second")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_STATUS")
     field(PINI, "1")
@@ -24,7 +23,6 @@ record(bi, "$(P)$(Q):CONNECTED")
 {
     field(DESC, "Controller connection")
     field(SCAN, "I/O Intr")
-    # field(SCAN, "1 second")
     field(DTYP, "asynInt32")
     field(VAL,  "0")
     field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_CONNECTED")
@@ -101,7 +99,6 @@ record(bo, "$(P)$(Q):DEFER") {
     field(DESC, "Deferred move control")
     field(SCAN, "Passive")
     field(DTYP, "asynInt32")
-    # field(DTYP, "asynUInt32Digital")
     field(OUT, "@asynMask($(PORT),0,$(TIMEOUT))MOTOR_DEFER_MOVES")
     field(ZNAM, "normal")
     field(ONAM, "defer")

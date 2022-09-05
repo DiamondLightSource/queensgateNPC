@@ -1,14 +1,13 @@
 #ifndef QGATENPCcontroller_H_
 #define QGATENPCcontroller_H_
 
-//#include <asynPortDriver.h>
 #include <asynMotorController.h>
 #include <asynMotorAxis.h>
 #include <TakeLock.h>
 #include <FreeLock.h>
 
-#include "include/controller_interface.h"
-#include "adapter/include/dll_adapter.hpp"
+#include "controller_interface.h"
+#include "dll_adapter.hpp"
 
 //Convert native picometres to micrometres
 #define PM_TO_MICRONS(value)    ((value) * 1.0e-6 )

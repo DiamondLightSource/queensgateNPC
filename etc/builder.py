@@ -114,7 +114,7 @@ class NScontroller(Device):
                         P=Simple("Device Prefix", str),
                         Q=Simple("Device Suffix", str),
                         numAxes=Simple("Amount of channels configured", int),
-                        portAddress=Simple("Low level Address of the physical port (usually /dev/ttyX)", str),
+                        portAddress=Simple("Low level Address of the physical port (usually IP address for Ethernet or /dev/ttyX for serial comms)", str),
                         fastPoll=Simple("Fast polling rate, in seconds (e.g. 0.5)", float),
                         slowPoll=Simple("Slow polling rate, in seconds (e.g. 1.7)", float),
                         libPath=Simple("Path and name for the Queensgate SDK library -- leave empty for using the one coming with the support module", str),

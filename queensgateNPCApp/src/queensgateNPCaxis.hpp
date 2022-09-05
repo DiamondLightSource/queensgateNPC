@@ -6,8 +6,6 @@
 #include <asynMotorController.h>
 #include <asynMotorAxis.h>
 
-// #include "include/controller_interface.h"
-// #include "include/dll_adapter.hpp"
 #include "queensgateNPCcontroller.hpp"
 
 class QgateAxis : public asynMotorAxis 
@@ -43,7 +41,7 @@ private:
     QgateController& ctrler;
     DllAdapter& qg;  //Queensgate adapter
     unsigned int axisNum;    //Axis number for DLL [1..n]
-                        //Note that it differs from asynMotorAxis::axisNo_ being the axis index [0..n]
+                        //Note that it differs from asynMotorAxis::axisNo_ that is the axis index [0..n-1]
     std::string axis_name;  //name of the stage
     std::string axis_model; //(Reported) model of the stage
     unsigned int axis_mode; //In-position mode to be used
@@ -58,7 +56,7 @@ private:
     bool initAxis();
     bool getStatusConnected();
     bool getStatusMoving(bool &moving);
-    bool getAxisMode();
+    bool isStageDigital();
     bool getPosition();
     bool updateAxisPV(std::string sCmd, int indexPV);
 };

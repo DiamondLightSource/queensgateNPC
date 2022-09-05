@@ -1,17 +1,8 @@
 #include <stdlib.h>
 #include <string>
 #include <sstream>
-/*
-#include <stddef.h>
-#include <stdio.h>
-#include <paramLib.h>
-*/
 
 #include <epicsExport.h>
-#include <epicsTime.h>
-#include <epicsThread.h>
-#include <epicsEvent.h>
-#include <epicsMutex.h>
 #include <iocsh.h>
 #include <asynOctetSyncIO.h>
 
@@ -22,7 +13,8 @@
 const char *driverName = "queensgateNPC";
 
 /** Gets a DoCommand list's content from its position.
- * \param[in] position position in the list. */
+  * \param[in] position position in the list.
+  * \return List string content at that position */
 std::string QGList::find(const int position) {
     int pos=0;
     for(QGList::iterator it=this->begin(); it!=this->end(); ++it, ++pos) {
@@ -34,7 +26,7 @@ std::string QGList::find(const int position) {
 } 
 
 /** Gets a DoCommand's full list of contents.
- */
+  * \return string containing all values separated by commas */
 std::string QGList::print() {
     std::ostringstream qgList;
     for(QGList::iterator it=this->begin(); it!=this->end(); ++it) {
@@ -44,14 +36,14 @@ std::string QGList::print() {
 }
 
 /** Driver object for communication with the controller
- * \param[in] portName The asyn name.
- * TODO: finish this commen
- * \param[in] movingPollPeriod The time in secs between polls when any axis is moving.
- * \param[in] idlePollPeriod The time in secs between polls when no axis is moving.
- * \param[in] libraryPath The number of times to force the movingPollPeriod after waking up the poller.  
- */
+  * \param[in] portName The asyn name.
+  * \param[in] portAddress Address of the physical port (usually the IP address for Ethernet or/dev/ttyX for serial)
+  * \param[in] numAxes Number of configured axes
+  * \param[in] movingPollPeriod The time in secs between polls when any axis is moving.
+  * \param[in] idlePollPeriod The time in secs between polls when no axis is moving.
+  * \param[in] libraryPath The number of times to force the movingPollPeriod after waking up the poller.   */
 QgateController::QgateController(const char *portName, 
-                                const char* serialPortName,
+                                const char* portAddress,
                                 const int maxNumAxes, 
                                 double movingPollPeriod, 
                                 double idlePollPeriod,
@@ -67,7 +59,7 @@ QgateController::QgateController(const char *portName,
             0) /* Default stack size */
     , numAxes(maxNumAxes)
     , maxAxes(QgateController::NOAXIS)
-    , portDevice(serialPortName)
+    , portDevice(portAddress)
     , nameCtrl(portName)
     , initialised(false)
     , connected(false)
@@ -140,6 +132,9 @@ QgateController::~QgateController() {
     qg.CloseSession();
 }
 
+/** Initialises the Queensgate Controller Library
+  * \param[in] libPath The path and filename of the Queensgate Library so/DLL.
+  * \return error if failed to initialise */
 asynStatus QgateController::initController(const char* libPath) {
     DllAdapterStatus result = DLL_ADAPTER_STATUS_SUCCESS;
     
@@ -154,6 +149,8 @@ asynStatus QgateController::initController(const char* libPath) {
     return asynSuccess;
 }
 
+/** Initialises the Queensgate Controller comms
+  * \return error if failed to initialise */
 asynStatus QgateController::initSession() {
     int dllVersionMajor, dllVersionMinor, dllVersionBuild;
     DllAdapterStatus result = DLL_ADAPTER_STATUS_SUCCESS;
@@ -173,6 +170,7 @@ asynStatus QgateController::initSession() {
     qg.GetDllVersion(dllVersionMajor, dllVersionMinor, dllVersionBuild);
     if(dllVersionMajor<0) { 
         printf("queensgateNPC: No DLL version function available!\n"); 
+        setStringParam(QG_CtrlDLLver, "---");
         }
     else {
         char dll[100];
@@ -184,6 +182,8 @@ asynStatus QgateController::initSession() {
     return asynSuccess;
 }
 
+/** Runs the initial comms checks and get basic information from Controller
+  * \return error if failed to communicate */
 asynStatus QgateController::initialChecks() {
     DllAdapterStatus result = DLL_ADAPTER_STATUS_SUCCESS;
     QGList listresName, listresVal;
@@ -243,7 +243,7 @@ asynStatus QgateController::initialChecks() {
 }
 
 /** Polls the controller and updates values
- */
+  * \return always asynsuccess as no fatal or urecoverable errors considered */
 asynStatus QgateController::poll() {
     TakeLock takeLock(this, /*alreadyTaken=*/true);
 	FreeLock freeLock(takeLock);
@@ -292,7 +292,8 @@ asynStatus QgateController::poll() {
 }
 
 /** Processes deferred moves.
-  * \param[in] deferMoves defer moves till later (true) or process moves now (false) */
+  * \param[in] deferMoves defer moves till later (true) or process moves now (false)
+  * \return error if failed to communicate */
 asynStatus QgateController::setDeferredMoves(bool deferMoves) {
     DllAdapterStatus result = DLL_ADAPTER_STATUS_ERROR_UNKNOWN_COMMAND;
     //coming from motorDeferMoves_
@@ -328,12 +329,18 @@ asynStatus QgateController::setDeferredMoves(bool deferMoves) {
     return asynSuccess;
 }
 
+/** Prints all the pending deferred move Controller commands */
 void QgateController::printdefmoves() {
     for (unsigned int i=0;i<deferredMove.size();i++) {
         asynPrint(pasynUserSelf, ASYN_TRACEIO_FILTER, "\t[%d]=%s\n", i, deferredMove[i].c_str());
     }
 }
 
+/** Process a Move command request and send it to the Controller
+  * \param[in] cmd Controller basic command string.
+  * \param[in] axisNum Axis stage to move
+  * \param[in] value Amount of movement
+  * \return error if failed to communicate */
 DllAdapterStatus QgateController::moveCmd(std::string cmd, int axisNum, double value) {
     DllAdapterStatus result = DLL_ADAPTER_STATUS_ERROR_UNKNOWN_COMMAND;
     QGList listresName, listresVal;
@@ -342,9 +349,10 @@ DllAdapterStatus QgateController::moveCmd(std::string cmd, int axisNum, double v
     //Compose move command for controller
     stageCmd << cmd << " " << axisNum << " " << std::fixed << value;
 
+    //The Controller stores all the axes' move request to be able to execute them in one go
     if (deferringMode) {
         //Store the request
-        deferredMove[axisNum-1] = stageCmd.str(); //Only the last request is stored
+        deferredMove[axisNum-1] = stageCmd.str();   //Only the last request is stored per axis
         printdefmoves();        //Print current list of moves
         return DLL_ADAPTER_STATUS_SUCCESS;
     }
@@ -367,6 +375,12 @@ DllAdapterStatus QgateController::moveCmd(std::string cmd, int axisNum, double v
     return result;
 }
 
+/** Process any Get command request and send it to the Controller, obtaining the outcome
+  * \param[in] cmd Controller basic command string.
+  * \param[in] axisNum Axis stage to move, 0 if no stage implied (i.e. a command for the Controller)
+  * \param[out] value Data from Controller reply
+  * \param[in] valueID Index of the data to get from Controller reply
+  * \return error if failed to communicate */
 DllAdapterStatus QgateController::getCmd(std::string cmd, int axisNum, std::string &value, int valueID) {
     DllAdapterStatus result = DLL_ADAPTER_STATUS_ERROR_UNKNOWN_COMMAND;
     QGList listresName, listresVal;
@@ -375,12 +389,11 @@ DllAdapterStatus QgateController::getCmd(std::string cmd, int axisNum, std::stri
     //Compose command for controller
     stageCmd << cmd;
     if(axisNum > 0) {
-        //Axis 0 is the controller itself and does not need this parameter
+        //Axis 0 is the controller itself and does not need this parameter on the string to send
         stageCmd << " " << axisNum;
     }
     asynPrint(pasynUserSelf, ASYN_TRACEIO_DRIVER, "Stage %s-%d requesting CMD:'%s'\n", nameCtrl.c_str(), axisNum, stageCmd.str().c_str());
     result = qg.DoCommand(stageCmd.str().c_str(), listresName, listresVal);
-    //TODO: if valueID empty, get the 1st element on listResVal
     if(result==DLL_ADAPTER_STATUS_SUCCESS) {
         value = listresVal.find(valueID);
         asynPrint(pasynUserSelf, ASYN_TRACEIO_DRIVER, "Stage %s-%d request's reply:'%s'\n", nameCtrl.c_str(), axisNum, value.c_str());
@@ -393,14 +406,15 @@ DllAdapterStatus QgateController::getCmd(std::string cmd, int axisNum, std::stri
     return result;
 }
 
-//TODO: DllAdapterStatus QgateController::sendCmd(std::string cmd, int axisNum, std::string &value, int valueID) {
-
-
-
+/** Gets the Library Controller adapter object associated to this
+  * \return controller adapter object */
 DllAdapter& QgateController::getAdapter() {
     return qg;
 }
 
+/** Tells if an axis have a stage connected to it that the Controller detects
+  * \param[in] axisNum Axis stage to check
+  * \return true if stage is present */
 bool QgateController::isAxisPresent(int axisNum) {
     std::string value;  //Store result here
     if(getCmd("identity.stage.part.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {

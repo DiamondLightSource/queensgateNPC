@@ -2,12 +2,7 @@
 #include <string>
 #include <sstream>
 
-// #include <asynPortDriver.h>
 #include <epicsExport.h>
-#include <epicsTime.h>
-#include <epicsThread.h>
-//#include <epicsEvent.h>
-//#include <epicsMutex.h>
 #include <iocsh.h>
 #include <asynOctetSyncIO.h>
 
@@ -15,9 +10,12 @@
 
 #define QGATE_NUM_PARAMS 100
 
-/*
- * Driver object for stage (axis) control
- */
+/** Driver object for stage (axis) control
+  * \param[in] controller Controller object
+  * \param[in] axisNumber Axis stage number [1..n]
+  * \param[in] axisName Name of the axis
+  * \param[in] axisMode Mode as in the type of moving indication to use, as specified by QgateAxis::AXISMODE 
+  * \param[in] axisType Type as in the type of stage connected, as specified by QgateAxis::AXISTYPE    */
 QgateAxis::QgateAxis(QgateController &controller,
                     unsigned int axisNumber,
                     const char *axisName,
@@ -46,13 +44,12 @@ QgateAxis::QgateAxis(QgateController &controller,
 
 QgateAxis::~QgateAxis() {}
 
+/** Initialises the Axis and identifies the stage connected to it.
+  * \return false if failed to initialise or communicate */
 bool QgateAxis::initAxis() {
     std::string value;
     bool result = false;
     
-    // setIntegerParam(ctrler.motorStatus_, 0);
-    // setIntegerParam(ctrler.motorStatusCommsError_, 1);
-    // setIntegerParam(ctrler.motorStatusFollowingError_, 0);
     //EPICS is not in charge of the closed loop operation, it is the Queensgate controller,
     // but nevertheless it is defined a closed loop.
     setClosedLoop(true);
@@ -66,10 +63,10 @@ bool QgateAxis::initAxis() {
     return result;
 }
 
-/** Poll the axis, start moves when possible, etc.  This function is
- * entered with the lock already on.
- * \param[out] moving Set to TRUE if the axis is moving
- */
+/** Polls the axis, start moves when possible, etc.  This function is
+  * entered with the lock already on.
+  * \param[out] moving Set to TRUE if the axis is moving
+  * \return always asynsuccess as no fatal or urecoverable errors considered */
 asynStatus QgateAxis::poll(bool *moving) {
     bool result = false;
     bool wasconnected = connected;
@@ -92,7 +89,7 @@ asynStatus QgateAxis::poll(bool *moving) {
         }
         //slow poll
         if (_pollCounter++ % SLOW_POLL_FREQ_CONST == 0) {
-            result |= getAxisMode();
+            result |= isStageDigital();
             result |= getStatusMoving(*moving);
         }
     } else {
@@ -119,6 +116,8 @@ asynStatus QgateAxis::poll(bool *moving) {
     return asynSuccess;   
 }
 
+/** Updates the axis connection status
+  * \return true if stage is connected */
 bool QgateAxis::getStatusConnected() {
     bool result = false;    //Default for when controller not connected
 
@@ -143,7 +142,9 @@ bool QgateAxis::getStatusConnected() {
     return connected;
 }
 
-bool QgateAxis::getAxisMode() {
+/** Tells if an axis is configured for digital or analogue mode in the Controller
+  * \return true if stage is configured for digital mode */
+bool QgateAxis::isStageDigital() {
     std::string value;
     if(ctrler.getCmd("stage.mode.digital-command.get", axisNum, value) == DLL_ADAPTER_STATUS_SUCCESS) {
         setIntegerParam(ctrler.QG_AxisMode, atoi(value.c_str()));
@@ -152,11 +153,10 @@ bool QgateAxis::getAxisMode() {
     return false;
 }
 
-/** Runs a get command and updates its related PV.
- * \param[in] sCmd Controller's command string
- * \param[in] indexPV Index of the PV to update
- * Returns false if communication fails
- */
+/** Updates the value of a given axis-related PV.
+  * \param[in] sCmd Controller's command string
+  * \param[in] indexPV Index of the PV to update
+  * \return false if communication fails */
 bool QgateAxis::updateAxisPV(std::string sCmd, int indexPV) {
     bool result = false;   //Assume feedback from controller failed
     std::string sValue;
@@ -169,25 +169,21 @@ bool QgateAxis::updateAxisPV(std::string sCmd, int indexPV) {
 }
 
 /** Gets the moving status, and confirms position reached if not moving.
-  * Returns false when comms or command failed  */
+  * \param[out] moving Returns here the motor moving status as configured. True if stage is moving.
+  * \return false when comms or command failed  */
 bool QgateAxis::getStatusMoving(bool &moving) {
     bool result = false;    //Assume feedback from controller failed
-    epicsInt32 inPos = 0;   //Assume not moving
+    epicsInt32 inPos = 0;   //Assume not in position
     
     if(isSensor) {
         moving = false;     //Sensor never have indication of being moved
-        result = true;      //Assume success comms
+        result = true;      //Assume successful comms
     } else {
         //Update moving/in-position status
         result = updateAxisPV("stage.status.stage-moving.get", ctrler.QG_AxisMoving);
         result |= updateAxisPV("stage.status.in-position.unconfirmed.get", ctrler.QG_AxisInPosUnconfirmed);
         result |= updateAxisPV("stage.status.in-position.lpf-confirmed.get", ctrler.QG_AxisInPosLPF);
         result |= updateAxisPV("stage.status.in-position.window-filter-confirmed.get", ctrler.QG_AxisInPosWindow);
-
-        ctrler.getIntegerParam(ctrler.QG_AxisInPosLPF, &inPos);
-        if(inPos){
-            forceStop = false;  //Already in position: no need to force stop
-        }
 
         if(!result) {
             moving = false;     //comms failure
@@ -219,6 +215,11 @@ bool QgateAxis::getStatusMoving(bool &moving) {
                     break;
             }
         }
+
+        //Check forcestop for the case when is forced to stop
+        if(inPos){
+            forceStop = false;  //Already in position: no need to force stop anymore
+        }
     }
     //Update Motor Record status
     setIntegerParam(ctrler.motorStatusDone_, !moving);
@@ -227,11 +228,14 @@ bool QgateAxis::getStatusMoving(bool &moving) {
     return result;
 }
 
+/** Update axis position readback.
+  * \return false when comms failed  */
 bool QgateAxis::getPosition() {
     std::string value;
     if(ctrler.getCmd("stage.position.measured.get", axisNum, value) != DLL_ADAPTER_STATUS_SUCCESS) {
         return false;
     }
+    // TODO: this probably should rely on configured units 
     //Report position
     double positionMicrons = PM_TO_MICRONS(atof(value.c_str()));
     double position = atof(value.c_str());
@@ -243,15 +247,16 @@ bool QgateAxis::getPosition() {
     return true;
 }
 
-/** Move the motor to an absolute location or by a relative amount.
+/** Move the stage to an absolute location or by a relative amount.
   * \param[in] position  The absolute position to move to (if relative=0) or the relative distance to move 
   * by (if relative=1). Units=microns.
   * \param[in] relative  Flag indicating relative move (1) or absolute move (0). [NOT YET IMPLEMENTED in this method -- only absolute move]
   * \param[in] minVelocity The initial velocity, often called the base velocity. Units=steps/sec. [IGNORED in this method]
   * \param[in] maxVelocity The maximum velocity, often called the slew velocity. Units=steps/sec. [IGNORED in this method]
-  * \param[in] acceleration The acceleration value. Units=steps/sec/sec. [IGNORED in this method]  */
+  * \param[in] acceleration The acceleration value. Units=steps/sec/sec. [IGNORED in this method]
+  * \return error if failed to communicate */  
 asynStatus QgateAxis::move(double position, int relative,
-            double minVelocity, double maxVelocity, double acceleration) {
+                            double minVelocity, double maxVelocity, double acceleration) {
     
     asynPrint(pasynUser_, ASYN_TRACE_FLOW, "::::MOVE axis axis %s-%d request: pos=%lf, relative=%d, minV=%lf, maxV=%lf, acc=%lf\n",
                 ctrler.nameCtrl.c_str(), axisNum, position, relative, minVelocity, maxVelocity, acceleration);
@@ -297,7 +302,10 @@ asynStatus QgateAxis::move(double position, int relative,
     return asynSuccess;
 }
 
-asynStatus QgateAxis::stop(double acceleration) {
+/** Command the stage to stop.
+  * \param[in] acceleration The acceleration value for the stop operation. Units=steps/sec/sec. [IGNORED in this method]
+  * \return error if failed to communicate */
+ asynStatus QgateAxis::stop(double acceleration) {
     asynStatus status = asynError;
     if(!connected) {
         // If axis not connected to a stage, ignore

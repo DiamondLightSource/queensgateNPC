@@ -12,8 +12,8 @@ extern "C" {
 
 /** Create a controller
  * \param[in] ctrlName Asyn port name
- * \param[in] lowlevelPortAddress Address of the physical port (usually /dev/ttyX)
- * \param[in] numAxes Maximum number of configured axes
+ * \param[in] lowlevelPortAddress Address of the physical port (usually the IP address for Ethernet or/dev/ttyX for serial)
+ * \param[in] numAxes Number of configured axes
  * \param[in] movingPollPeriod The period at which to poll position while moving, in seconds
  * \param[in] idlePollPeriod The period at which to poll position while not moving, in seconds
  * \param[in] libPath Full file name and path to the Queensgate controller library
@@ -24,29 +24,25 @@ asynStatus qgateControllerConfig(const char* ctrlName,
                                 const double movingPollPeriod, 
                                 const double idlePollPeriod, 
                                 const char* libPath) {
-    //For Queensgate SDK library, it might need to run first (on e.g. /tmp/vmodem0):
+    //NOTE: For using serial comms to Ethernet Terminal Servers, the Queensgate SDK library might need to 
+    // run first on the IOC server a socat connection to link serial comms to an Ethernet Terminal Server. 
+    // For example, a /tmp/vmodem0 connecting to port 17 of terminal server 172.23.112.6:
     //      socat PTY,link=/tmp/vmodem0,raw TCP4:172.23.112.6:4017
-    //  and then call in this code:
+    //  and then call this code in the IOC:
     //      t = qg.OpenSession("/tmp/vmodem0")
       
-    //printf("New controller(%s, maxNumAxes=%d, lowPort=%s)...\n",ctrlName, maxNumAxes, lowlevelPortAddress);
-
-    //XXX: remove pd, or leave for asynPrint?
-    // QgateController* pd = 
-
     new QgateController(ctrlName, lowlevelPortAddress, maxNumAxes, 
                         movingPollPeriod, idlePollPeriod, libPath);
 
-    // printf("queensgateNPC: Created %p\n", pd);
     return asynSuccess;
 }
 
 /** Create an axis
- * param[in] ctlrName Asyn port name of the controller
- * param[in] axisNum The number of this axis
- * param[in] axisNum Name assigned to this axis
- * param[in] axisType Type of stage attached: motion stage or sensor
- * param[in] axisMode Mode or confirming when the stage is in position: Native, Unconfirmed, Window-confirmed, LPF-confirmed, Window&LPF
+ * \param[in] ctlrName Asyn port name of the controller
+ * \param[in] axisNum The number of this axis
+ * \param[in] axisNum Name assigned to this axis
+ * \param[in] axisType Type of stage attached: motion stage or sensor
+ * \param[in] axisMode Mode or confirming when the stage is in position: Native, Unconfirmed, Window-confirmed, LPF-confirmed, Window&LPF
  */
 asynStatus qgateAxisConfig(const char* ctrlName, 
                             unsigned int axisNum, 
@@ -54,9 +50,6 @@ asynStatus qgateAxisConfig(const char* ctrlName,
                             unsigned int axisMode=QgateAxis::AXISMODE_NATIVE,
                             unsigned int axisType=QgateAxis::AXISTYPE_STAGE) {
     asynStatus result = asynSuccess;
-
-    //XXX:
-    // printf("about to create Axis obj for %s controller\n", ctrlName);
 
     //Find controller
     QgateController* ctrl = (QgateController*)findAsynPortDriver(ctrlName);
@@ -66,9 +59,6 @@ asynStatus qgateAxisConfig(const char* ctrlName,
         result = asynError;
     } else {
         new QgateAxis(*ctrl, axisNum, axisName, axisMode, axisType);
-
-        //TODO: convert these printfs into asynPrint
-        //printf("queensgateNPC: %s:Axis %d '%s' %d created\n", ctrlName, axisNum, axisName, axisType);
     }
     return result;
 }
@@ -91,24 +81,6 @@ static const iocshArg * const qgateCtrlConfig_Args[] = { &qgateCtrlConfig_Arg0,
 static const iocshFuncDef qgateCtrlConfig_FuncDef = { "qgateCtrlConfig", 6, qgateCtrlConfig_Args };
 
 static void qgateCtrlConfig_CallFunc(const iocshArgBuf *args) {
-    // XXX: print parameters
-    // printf("Controller CallFunc Params:\n");
-    // for(int i=0; i<=5; i++)
-    // {
-    //     switch(i) {
-    //         case 2:
-    //             printf("\t[%d]='%d'\n", i, args[i].ival);
-    //             break;
-    //         case 3:
-    //         case 4:
-    //             printf("\t[%d]='%f'\n", i, args[i].dval);
-    //             break;
-    //         default:
-    //             printf("\t[%d]='%s'\n", i, args[i].sval);
-    //             break;
-    //     }
-    // }
-    
     qgateControllerConfig(args[0].sval, args[1].sval, args[2].ival, 
                             args[3].dval, args[4].dval, args[5].sval);
 }
@@ -126,18 +98,6 @@ static const iocshArg * const qgateAxisConfig_Args[] = { &qgateAxisConfig_Arg0,
 static const iocshFuncDef qgateAxisConfig_FuncDef = { "qgateAxisConfig", 5, qgateAxisConfig_Args };
 
 static void qgateAxisConfig_CallFunc(const iocshArgBuf *args) {
-    // XXX: print parameters
-    // printf("Axis CallFunc Params:\n");
-    // for(int i=0; i<=2; i++)
-    // {
-    //     if(i==1)
-    //         printf("\t[%d]='%d'\n", i, args[i].ival);
-    //     else
-    //     {
-    //         printf("\t[%d]='%s'\n", i, args[i].sval);
-    //     }
-    // }
-            
     qgateAxisConfig(args[0].sval, args[1].ival, args[2].sval, 
                         args[3].ival, args[4].ival);
 }
