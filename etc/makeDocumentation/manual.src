@@ -1,15 +1,15 @@
 /**
 \mainpage queensgateNPC EPICS Support Module
 \section intro_sec Introduction
-EPICS support for Queensgate NPC-D-5xxx and 6xxx series controllers using <a href="https://www.prior.com/product/pc-d-6000-multi-channel-closed-loop-controller">Prior's SDK</a>. \n
-You can also link to \ref thing.vdb "internally generated documentation" with alternate text, or by just by mentioning its name, e.g. thing.vdb
+EPICS asyn driver for Queensgate <a href="https://www.nanopositioning.com/product/pc-d-6000-multi-channel-closed-loop-controller">NanoScan NPC-D-6xxx</a> and NanoScan NS-D-6xxx controller series compatible with PriorSDK 2.2.16 version and over.
 
 \section bugs_sec Known Bugs
-- Only tested on NPC-D-6330 & NS-6300
-- Working for Prior's SDK > 2.2
+- Only tested on NPC-D-6330 & NS-D-6300 devices
+- Working for Prior's SDK 2.2.16
+- Noise over serial connections can be a problem -- Ethernet is recommended.
 
 \section user_sec User Manual
-This section contains instructions for the end user
+Requires downloading and unpacking the SDK into the source directory.
 
 \section build_sec Build Instructions 
 - \subpage build_instructions_example
