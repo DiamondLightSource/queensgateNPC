@@ -93,11 +93,13 @@ record(stringin, "$(P)$(Q):SECURITY")
     field(PINI, "1")
 }
 
-record(stringin, "$(P)$(Q):REPORT")
+record(waveform, "$(P)$(Q):REPORT")
 {
     field(DESC, "Stages initial report")
     field(SCAN, "I/O Intr")
     field(DTYP, "asynOctetRead")
     field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_REPORT")
+    field(FTVL, "CHAR")
+    field(NELM, "256")
     field(PINI, "1")
 }

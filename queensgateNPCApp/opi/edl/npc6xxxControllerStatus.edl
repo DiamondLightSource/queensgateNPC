@@ -4,9 +4,9 @@ major 4
 minor 0
 release 1
 x 556
-y 393
+y 467
 w 288
-h 302
+h 403
 font "arial-medium-r-16.0"
 ctlFont "arial-bold-r-16.0"
 btnFont "arial-medium-r-16.0"
@@ -34,7 +34,7 @@ release 0
 x 8
 y 48
 w 272
-h 210
+h 314
 lineColor index 14
 fill
 fillColor index 5
@@ -66,7 +66,7 @@ major 4
 minor 1
 release 0
 x 216
-y 270
+y 370
 w 64
 h 24
 fgColor index 46
@@ -398,21 +398,21 @@ value {
 autoSize
 endObjectProperties
 
-# (Textupdate)
-object TextupdateClass
+# (multiLineTextUpdate)
+object multiLineTextUpdateClass
 beginObjectProperties
 major 10
 minor 0
 release 0
-x 144
-y 180
-w 128
-h 70
+x 16
+y 200
+w 256
+h 152
 controlPv "$(device):REPORT"
-fgColor index 16
+fgColour index 16
 fgAlarm
-bgColor index 10
+bgColour index 10
 fill
-font "arial-medium-r-14.0"
+font "arial-medium-r-12.0"
 endObjectProperties
 
