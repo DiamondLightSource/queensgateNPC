@@ -81,6 +81,7 @@ QgateController::QgateController(const char *portName,
     createParam(QG_CtrlMaxAxesCmd,      asynParamInt32,     &QG_CtrlMaxAxes);
     createParam(QG_CtrlDLLverCmd,       asynParamOctet,     &QG_CtrlDLLver);
     createParam(QG_CtrlSecurityCmd,     asynParamOctet,     &QG_CtrlSecurity);
+    createParam(QG_CtrlReportCmd,       asynParamOctet,     &QG_CtrlReport);
     createParam(QG_AxisNameCmd,         asynParamOctet,     &QG_AxisName);
     createParam(QG_AxisModelCmd,        asynParamOctet,     &QG_AxisModel);
     createParam(QG_AxisConnectedCmd,    asynParamInt32,     &QG_AxisConnected);
@@ -239,6 +240,7 @@ asynStatus QgateController::initialChecks() {
         reportTxt << std::endl;
     }
     printf("%s", reportTxt.str().c_str());
+    setStringParam(QG_CtrlReport, reportTxt.str().c_str());
     return asynSuccess;
 }
 

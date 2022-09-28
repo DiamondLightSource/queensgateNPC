@@ -93,6 +93,15 @@ record(stringin, "$(P)$(Q):SECURITY")
     field(PINI, "1")
 }
 
+record(stringin, "$(P)$(Q):REPORT")
+{
+    field(DESC, "Stages initial report")
+    field(SCAN, "I/O Intr")
+    field(DTYP, "asynOctetRead")
+    field(INP,  "@asyn($(PORT),0,$(TIMEOUT))QGATE_REPORT")
+    field(PINI, "1")
+}
+
 #Deferred moves. Enables storage of 1 move of each axis when set, and
 #               execute all movements at once by unsetting it back
 record(bo, "$(P)$(Q):DEFER") {

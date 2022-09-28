@@ -60,6 +60,7 @@
 #define QG_CtrlMaxAxesCmd           "QGATE_MAXAXES"
 #define QG_CtrlDLLverCmd            "QGATE_DLLVER"
 #define QG_CtrlSecurityCmd          "QGATE_SECURITY"
+#define QG_CtrlReportCmd            "QGATE_REPORT"
 #define QG_AxisNameCmd              "QGATE_NAMEAXIS"
 #define QG_AxisModelCmd             "QGATE_STAGEMODEL"
 #define QG_AxisConnectedCmd         "QGATE_AXISCONN"
@@ -109,6 +110,7 @@ protected:
     int QG_CtrlMaxAxes;
     int QG_CtrlDLLver;
     int QG_CtrlSecurity;
+    int QG_CtrlReport;
     int QG_AxisName;
     int QG_AxisModel;
     int QG_AxisConnected;
