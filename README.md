@@ -32,15 +32,19 @@ Instructions
 To use this driver do the following:
 
 * Download the needed SDK pack.
-* Unpack the SDK on `queensgateNPCApp/src/qglib/` and copy your chosen `controller_interface.so` or `controller_interface64.so` file into the `qglib` directory.
-* Ensure that the `LIB_INSTALLS+= ...` line points to your chosen `.so` file. Removing the unused `.so` files is recommended in order to reduce the module and IOC size.
+* Unpack the SDK on `queensgateNPCApp/src/qglib/` and copy your chosen `controller_interface.so` or `controller_interface64.so` file into the `qglib` directory. Note that only the following directory structure is needed for the support module:
+    `src/qglib/`
+            `controller_interfaceXX.so`
+            `license/Prior Scientific EULA.rtf`
+            `controller_interface/`
+                                `adapter/`
+                                `include/`
+                                `source/`
+* On the `src/Makefile` ensure that the `LIB_INSTALLS+= ...` text line points to your chosen `.so` file. Removing the unused `.so` files is recommended in order to reduce the module and IOC size.
 * Set paths to dependencies in configure/RELEASE
 
 To update the version of the SDK:
 
 * Replace the SDK on `queensgateNPCApp/src/qglib/` and the `.so` file.
-* Ensure that the `LIB_INSTALLS+= ...` line points to your chosen `.so` file.
-
-
-An example IOC is included at iocs/sampleIOC.
+* On the `src/Makefile` ensure that the `LIB_INSTALLS+= ...` line points to your chosen `.so` file.
 
